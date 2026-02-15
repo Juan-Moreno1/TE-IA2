@@ -31,7 +31,6 @@ execute:
   warning: false
 ---
 
-
 ```{r}
 library(ggplot2)
 library(lmtest)
@@ -63,23 +62,21 @@ library(patchwork)
 
 Para que el modelo de regresión esté bien especificado y los estimadores por MCO tengan buenas propiedades (y bajo normalidad coincidan con los de máxima verosimilitud), se suelen asumir varios supuestos:
 
-1. **Linealidad:** la relación entre la variable dependiente y las explicativas debe ser lineal en los parámetros.  
-2. **Independencia:** las observaciones deben ser independientes entre sí.  
-3. **Homoscedasticidad:** la varianza del término de error debe ser constante para todas las observaciones.  
-4. **Normalidad:** los errores deberían distribuirse normalmente (esto es más fuerte y no siempre es estrictamente necesario).  
-5. **No multicolinealidad perfecta:** las variables explicativas no deben estar perfectamente correlacionadas.  
-6. **No autocorrelación:** los errores no deben estar correlacionados entre ellos.  
-7. **Exogeneidad:** las variables explicativas no deben estar correlacionadas con el error.
-
+1.  **Linealidad:** la relación entre la variable dependiente y las explicativas debe ser lineal en los parámetros.\
+2.  **Independencia:** las observaciones deben ser independientes entre sí.\
+3.  **Homoscedasticidad:** la varianza del término de error debe ser constante para todas las observaciones.\
+4.  **Normalidad:** los errores deberían distribuirse normalmente (esto es más fuerte y no siempre es estrictamente necesario).\
+5.  **No multicolinealidad perfecta:** las variables explicativas no deben estar perfectamente correlacionadas.\
+6.  **No autocorrelación:** los errores no deben estar correlacionados entre ellos.\
+7.  **Exogeneidad:** las variables explicativas no deben estar correlacionadas con el error.
 
 ### b) ¿Cuáles son las propiedades de los parámetros estimados por MCO?
 
 Los estimadores por MCO tienen varias propiedades importantes:
 
-1. **Insesgadez:** en promedio, el estimador coincide con el verdadero parámetro.  
-2. **Consistencia:** cuando el tamaño de muestra crece, el estimador se aproxima al valor real.  
-3. **Eficiencia:** dentro de los estimadores lineales e insesgados, MCO tiene la menor varianza.
-
+1.  **Insesgadez:** en promedio, el estimador coincide con el verdadero parámetro.\
+2.  **Consistencia:** cuando el tamaño de muestra crece, el estimador se aproxima al valor real.\
+3.  **Eficiencia:** dentro de los estimadores lineales e insesgados, MCO tiene la menor varianza.
 
 ### c) Defina el problema de endogeneidad en un modelo de regresión. ¿Cómo se puede solucionar? ¿Con cuáles métodos?
 
@@ -87,10 +84,9 @@ La endogeneidad aparece cuando alguna variable explicativa está correlacionada 
 
 Para corregirla se pueden usar métodos como Variables Instrumentales (VI), Mínimos Cuadrados en Dos Etapas (MC2E), modelos de efectos fijos o incluso técnicas más avanzadas dependiendo del problema.
 
-
 ### d) Explique el método de estimación “Máxima Verosimilitud”.
 
-La Máxima Verosimilitud es un método que consiste en elegir los parámetros que maximizan la probabilidad de observar los datos que realmente se tienen. Es decir, se construye una función de verosimilitud y se buscan los valores que la hacen lo más grande posible. 
+La Máxima Verosimilitud es un método que consiste en elegir los parámetros que maximizan la probabilidad de observar los datos que realmente se tienen. Es decir, se construye una función de verosimilitud y se buscan los valores que la hacen lo más grande posible.
 
 Este método es especialmente útil cuando se tiene una distribución específica para los errores o cuando se trabaja con modelos no lineales. Bajo ciertas condiciones, los estimadores de máxima verosimilitud son consistentes, asintóticamente normales y eficientes.
 
@@ -120,7 +116,7 @@ En este espacio correremos la regresión lineal para estimar los parametros de l
 ```{r}
 modelo <- lm(CT ~ Y + I(Y^2) +I(Y^3) , data = df)
 stargazer(modelo, type = "text", title = "Resultados de la regresión", align = TRUE, no.space = TRUE)
-# dejamos la regresión lineal que se nos habia propuesto para obtener sus betas
+# dejamos la regresión lineal 
 ```
 
 Como primer vistazo podemos observar que el modelo con la prueba *F* es significativo, ademas los coeficientes de manera indiviudal son significativos.
@@ -135,10 +131,9 @@ $$
 
 ### c) Calcule y grafique las siguientes funciones a partir de la ecuación estimada. Pista: calcule las derivadas y luego reemplace los valores de los betas estimados en cada ecuación.
 
-i. Función de costo total
+i.  Función de costo total
 
-la función de costo total es la siguiente:
-$$
+la función de costo total es la siguiente: $$
 \hat{CT_i} = 185.531 +  22.548Y_i -3.340Y_i^2 + 0.634Y_i^3
 $$
 
@@ -146,8 +141,7 @@ Que la misma de la parte superior.
 
 ii. Función de costo marginal (como cambia el costo total cuando cambia la producción)
 
-la función de costo marginal se obtiene al derivar la función de costo total con respecto a la producción $Y_i$:
-$$
+la función de costo marginal se obtiene al derivar la función de costo total con respecto a la producción $Y_i$: $$
 CM_i = \frac{d\hat{CT_i}}{dY_i} = 22.548 - 2 \cdot 3.340Y_i + 3 \cdot 0.634Y_i^2 = 22.548 - 6.680Y_i + 1.902Y_i^2
 $$
 
@@ -155,15 +149,13 @@ Asi obtenemos la función de costo marginal, que nos indica cómo cambia el cost
 
 iii. Función de costo medio (el costo total dividido la producción)
 
-La función de costo medio se obtiene dividiendo la función de costo total por la producción $Y_i$:
-$$
+La función de costo medio se obtiene dividiendo la función de costo total por la producción $Y_i$: $$
 CM_i = \frac{\hat{CT_i}}{Y_i} = \frac{185.531 +  22.548Y_i -3.340Y_i^2 + 0.634Y_i^3}{Y_i} = \frac{185.531}{Y_i} + 22.548 - 3.340Y_i + 0.634Y_i^2
 $$
 
 iv. Función de costo variable medio (el costo variable dividido la producción)
 
-El costo variable se obtiene restando el costo fijo (intercepto) del costo total:
-$$
+El costo variable se obtiene restando el costo fijo (intercepto) del costo total: $$
 CV_i = \hat{CT_i} - 185.531 = 22.548Y_i -3.340Y_i^2 + 0.634Y_i^3
 $$
 
@@ -193,11 +185,7 @@ ggplot(costos, aes(x = Y)) +
 
 ### d) Interprete los coeficientes estimados (tenga en cuenta que es una función de costo total, es decir, solo hay dos costos que la componen, el costo fijo y el costo variable). Pista: Utilice la derivada de la función de producción con respecto a la producción.
 
-Los coeficientes estimados en la función de costos totales representan lo siguiente:
-- El intercepto (185.531) representa el costo fijo de la empresa, es decir, el costo que incurre la empresa incluso cuando no produce nada.
-- El coeficiente de $Y$ (22.548) representa el costo variable por unidad de producción, es decir, el costo adicional que incurre la empresa por cada unidad adicional producida.
-- El coeficiente de $Y^2$ (-3.340) indica que el costo variable disminuye a medida que la producción aumenta, lo que sugiere economías de escala.
-- El coeficiente de $Y^3$ (0.634) indica que el costo variable aumenta a medida que la producción aumenta, lo que sugiere deseconomías de escala a niveles de producción más altos.
+Los coeficientes estimados en la función de costos totales representan lo siguiente: - El intercepto (185.531) representa el costo fijo de la empresa, es decir, el costo que incurre la empresa incluso cuando no produce nada. - El coeficiente de $Y$ (22.548) representa el costo variable por unidad de producción, es decir, el costo adicional que incurre la empresa por cada unidad adicional producida. - El coeficiente de $Y^2$ (-3.340) indica que el costo variable disminuye a medida que la producción aumenta, lo que sugiere economías de escala. - El coeficiente de $Y^3$ (0.634) indica que el costo variable aumenta a medida que la producción aumenta, lo que sugiere deseconomías de escala a niveles de producción más altos.
 
 ### e) Realice un análisis de los resultados del modelo (significancia individual, significancia conjunta, $R^{2}$.
 
@@ -205,7 +193,7 @@ El análisis de los resultados del modelo muestra que:
 
 El resultado de todos los coeficientes son significativos al 0.01, lo que indica que cada uno de los términos $(Y, Y^2, Y^3)$ tiene un impacto significativo en el costo total.
 
-El f calculado del modelo nos da  4,849.5 con un p-valor de 0.01 lo que indica que el modelo es significativo en su conjunto.
+El f calculado del modelo nos da 4,849.5 con un p-valor de 0.01 lo que indica que el modelo es significativo en su conjunto.
 
 ### f) Aplique pruebas de Autocorrelación (Correlograma (Box-Pierce–Ljung-Box), Durbin-Watson y Breusch-Godfrey), Heteroscedasticidad (Breusch-Pagan y White (sin términos cruzados)) y Normalidad (Jarque-Bera y Shapiro-Wilk). Presente el resultado de cada prueba de manera ordenada, comente sus resultados y conclusión.
 
@@ -285,8 +273,7 @@ Ademas la prueba de Jarque-Bera y Shapiro-Wilk nos indican que los residuos sigu
 
 Para calcular el nivel de producción al que las firmas salen de la industria, debemos encontrar el punto en el que el costo marginal es igual al precio de mercado. En un mercado competitivo, el precio de mercado es igual al costo marginal en el punto de salida.
 
-Matemáticamente, esto se expresa como:
-$$
+Matemáticamente, esto se expresa como: $$
 CM_i = P
 $$
 
@@ -304,8 +291,7 @@ $$
 
 Y asi encontramos el optimo de producción al que las firmas salen de la industria, dependiendo del precio de mercado.
 
-Ahora vamos a calcular el punto de cierre, el cual se expresa de la siguiente forma:
-$$
+Ahora vamos a calcular el punto de cierre, el cual se expresa de la siguiente forma: $$
 CT(Y)=185.531+22.548Y-3.340Y^2+0.634Y^3
 $$
 
@@ -315,28 +301,21 @@ $$
 CV(Y)=22.548Y-3.340Y^2+0.634Y^3,\qquad CF=185.531
 $$
 
-
-
 $$
 AVC(Y)=\frac{CV(Y)}{Y}=22.548-3.340Y+0.634Y^2
 $$
-
-
 
 $$
 \text{Punto de cierre:}\quad P_{\text{cierre}}= Cm_i(Y_{\text{cierre}})=AVC(Y_{\text{cierre}})
 $$
 
-Replazando la ecuación del costo marginal y el costo variable medio en la ecuación del punto de cierre, tenemos:
-$$
+Replazando la ecuación del costo marginal y el costo variable medio en la ecuación del punto de cierre, tenemos: $$
 22.548-3.340Y_i+0.634Y_i^2=22.548 - 6.680Y_i + 1.902Y_i^2 \text{ lo que es igual a } 3.340Y_i - 1.268Y_i^2 = 0
 $$
 
-Despejamos $Y_i$ para encontrar el nivel de producción al que las firmas salen de la industria:
-$$
+Despejamos $Y_i$ para encontrar el nivel de producción al que las firmas salen de la industria: $$
 Y_i = \frac{3.340}{1.268} \approx 2.634
 $$
-
 
 Ahora que tenemos el nivel de producción al que las firmas salen de la industria, podemos calcular el nivel de precio al que las firmas salen de la industria utilizando la función de costo variable medio:
 
@@ -384,14 +363,11 @@ ggplot(df, aes(x = Y)) +
   annotate("text", x = y_cierre +2, y = p_cierre-3.5, label = "Punto de Cierre", color = "black", fontface = "bold")
 ```
 
-
 ### h) Pruebe la siguiente hipótesis con un nivel de significancia del 5%. “Una de las firmas que participan en la industria le manifiestan que según sus cálculos el nivel de producción al que una firma tiene que cerrar es de 4.000 unidades”.
 
-Para probar la hipótesis de que el nivel de producción al que una firma tiene que cerrar es de 4.000 unidades, podemos plantear las siguientes hipótesis:
-$$
+Para probar la hipótesis de que el nivel de producción al que una firma tiene que cerrar es de 4.000 unidades, podemos plantear las siguientes hipótesis: $$
 H_0: Y_{\text{cierre}} = 4 \text{ la firma cierra a 4.000 uniadades}
-$$
-$$
+$$ $$
 H_a: Y_{\text{cierre}} \neq 4 \quad \text{(La firma no cierra a 4.000 unidades)}  
 $$
 
@@ -404,7 +380,7 @@ $$
 linearHypothesis(modelo, "I(Y^2) + 8*I(Y^3) = 0",, test = "Chisq" )
 ```
 
-Podemos observar que el valor p de la prueba es igual a 0.0851, lo que nos indica que no podemos rechazar la hipotesis nula al nivel de significancia del 5%, lo que sugiere que no hay suficiente evidencia para afirmar que el nivel de producción al que una firma tiene que cerrar es diferente de 4.000 unidades. 
+Podemos observar que el valor p de la prueba es igual a 0.0851, lo que nos indica que no podemos rechazar la hipotesis nula al nivel de significancia del 5%, lo que sugiere que no hay suficiente evidencia para afirmar que el nivel de producción al que una firma tiene que cerrar es diferente de 4.000 unidades.
 
 ### i) Aplique una prueba de Normalidad, Homoscedasticidad y no Autocorrelación, para determinar si el modelo cumple con los supuestos clásicos. ¿Existe algún problema econométrico?
 
@@ -424,11 +400,10 @@ $$
 
 Donde:
 
-- $lrm_{t}$ es el logaritmo de M2 (en términos reales).
-- $lry_{t}$ es el logaritmo del ingreso real.
-- $ib_{t}$ es una tasa de interés sobre bonos.
-- $id_{t}$ es una tasa de interés sobre depósitos.
-
+-   $lrm_{t}$ es el logaritmo de M2 (en términos reales).
+-   $lry_{t}$ es el logaritmo del ingreso real.
+-   $ib_{t}$ es una tasa de interés sobre bonos.
+-   $id_{t}$ es una tasa de interés sobre depósitos.
 
 ```{r}
 # vamos a leer la base de datos
@@ -455,28 +430,21 @@ iii. Presenta una tabla con la estimación de cada modelo.
 iv. Muestre el cálculo del Estadístico de Prueba (F).
 v.  Concluya.
 
-
-Para resolver este punto, primero debemos definir las hipótesis para el test de Chow: 
-**Hipótesis Nula ($H_0$):** No existe cambio estructural en 1980:2. Todos los coeficientes asociados a la variable dummy y sus interacciones son iguales a cero.
-$$
+Para resolver este punto, primero debemos definir las hipótesis para el test de Chow: **Hipótesis Nula (**$H_0$): No existe cambio estructural en 1980:2. Todos los coeficientes asociados a la variable dummy y sus interacciones son iguales a cero. $$
 H_0: \alpha_0 = \alpha_1 = \alpha_2 = \alpha_3 = 0
 $$
 
-**Hipótesis Alterna ($H_1$):** Existe cambio estructural en 1980:2. Al menos uno de los coeficientes asociados a la variable dummy o sus interacciones es distinto de cero.
-$$
+**Hipótesis Alterna (**$H_1$): Existe cambio estructural en 1980:2. Al menos uno de los coeficientes asociados a la variable dummy o sus interacciones es distinto de cero. $$
 H_1: \text{Al menos un } \alpha_i \neq 0 \quad \text{para } i = 0, 1, 2, 3
 $$
 
-
 Ahora vamos a definir los modelos restringido (R) y no restringido (U):
 
-Modelo Restringido (R):
-$$
+Modelo Restringido (R): $$
 lrm_{t} = \beta_{0} + \beta_{1}lry_{t} + \beta_{2}ib_{t} + \beta_{3}id_{t} + \varepsilon_{t}
 $$
 
-Modelo No Restringido (U):
-$$
+Modelo No Restringido (U): $$
 \begin{aligned} lrm_{t} = &\beta_{0} + \beta_{1}lry_{t} + \beta_{2}ib_{t} + \beta_{3}id_{t} + \\
 &\alpha_{0}D_{t} + \alpha_{1}(D_{t} \cdot lry_{t}) + \alpha_{2}(D_{t} \cdot ib_{t}) + \alpha_{3}(D_{t} \cdot id_{t}) + \varepsilon_{t}
 \end{aligned}
@@ -508,6 +476,7 @@ stargazer(modelo_R,modelo_U, type = "text", title = "Resultados de las Regresion
 ```
 
 Ahora vamos a realizar la prueba del estadistico F para comparar ambos modelos:
+
 ```{r}
 # El '*' crea automáticamente D, lry, ib, id Y todas sus interacciones con D
 modelo_U_Chow <- lm(lrm ~ D * (lry + ib + id), data = dfd)
@@ -533,23 +502,19 @@ v.  Concluya.
 
 En este punto vamos a establecer el cambio en el intercepto.
 
-**Hipótesis Nula ($H_0$):** No existe cambio estructural en 1980:2. El coeficiente asociado a la variable dummy es igual a cero.
-$$
+**Hipótesis Nula (**$H_0$): No existe cambio estructural en 1980:2. El coeficiente asociado a la variable dummy es igual a cero. $$
 H_0: \alpha_0 = 0
 $$
 
-**Hipótesis Alterna ($H_1$):** Existe cambio estructural en 1980:2. El coeficiente asociado a la variable dummy es distinto de cero.
-$$
+**Hipótesis Alterna (**$H_1$): Existe cambio estructural en 1980:2. El coeficiente asociado a la variable dummy es distinto de cero. $$
 H_1: \alpha_0 \neq 0
 $$
 
-Modelo Restringido (R):
-$$
+Modelo Restringido (R): $$
 lrm_{t} = \beta_{0} + \beta_{1}lry_{t} + \beta_{2}ib_{t} + \beta_{3}id_{t} + \varepsilon_{t}
 $$
 
-Modelo No Restringido (U):
-$$
+Modelo No Restringido (U): $$
 lrm_{t} = \beta_{0} + \beta_{1}lry_{t} + \beta_{2}ib_{t} + \beta_{3}id_{t} + \alpha_{0}D_{t} + \varepsilon_{t}
 $$
 
@@ -660,9 +625,7 @@ Primero con el test de Durbin-Watson, Breusch-Godfrey y Ljung-Box nos indican qu
 
 Segundo, en el test de Breusch-Pagan nos indica que no hay evidencia de heteroscedasticidad, pero en contraste el test de White nos indica que si hay evidencia de heteroscedasticidad, lo que suguiere que la heteroscedasticidad no es lineal. Para corregir este problema, se podrían utilizar errores estándar robustos o transformar la variable dependiente para estabilizar la varianza.
 
-Tercero, en el test de Jarque-Bera y Shapiro-Wilk nos indican que los residuos si siguen una distribución normal, lo que es un buen resultado para el modelo y no necesita corrección en este aspecto.
-Pero si lo necesitará seria utilizar transformaciones de la variable dependiente o utilizar métodos de estimación que no requieran normalidad, como la regresión robusta o modelos de regresión no paramétrica.
-
+Tercero, en el test de Jarque-Bera y Shapiro-Wilk nos indican que los residuos si siguen una distribución normal, lo que es un buen resultado para el modelo y no necesita corrección en este aspecto. Pero si lo necesitará seria utilizar transformaciones de la variable dependiente o utilizar métodos de estimación que no requieran normalidad, como la regresión robusta o modelos de regresión no paramétrica.
 
 ## EJERCICIO 4 – Regresión con Variables Instrumentales (Endogeneidad)
 
@@ -673,7 +636,7 @@ El archivo **“Cigarrillos.xlsx”** contiene información sobre el consumo de 
 A continuación, una descripción de las variables.
 
 | Variable | Descripción |
-|---|---|
+|------------------------------------|------------------------------------|
 | *state* | 48 estados |
 | *year* | 1985, 1995 |
 | *cpi* | índice de precios al consumidor |
@@ -710,7 +673,6 @@ df85 <- subset(dfc, year == 1985)
 df95 <- subset(dfc, year == 1995)
 ```
 
-
 ### a) Estime la ecuación (4) por MCO para 1985 y 1995. Presente los resultados en una misma Tabla. ¿Cuál es el valor de la elasticidad precio de la demanda en cada año? Interprete los valores.
 
 ```{r}
@@ -722,8 +684,7 @@ modelo_95 <- lm(log(packs) ~ log(rprice), data = df95)
 stargazer(modelo_85,modelo_95, type = "text", title = "Resultados de las Regresiones MCO", align = TRUE, no.space = TRUE)
 ```
 
-Intepretación:
-En 1985 la elasticidad precio de la demanda de los cigarrillos es de -0.985, es decir que ante un aumento del 1% en el precio real de los cigarrillos, se espera que la cantidad demandada de cigarrillos disminuya en un 0.985%, manteniendo todo lo demás constante. Esto mostrando una demanda inelastica.
+Intepretación: En 1985 la elasticidad precio de la demanda de los cigarrillos es de -0.985, es decir que ante un aumento del 1% en el precio real de los cigarrillos, se espera que la cantidad demandada de cigarrillos disminuya en un 0.985%, manteniendo todo lo demás constante. Esto mostrando una demanda inelastica.
 
 En 1995 la elasticidad precio de la demanda de los cigarrillos es de -1.213, es decir que ante un aumento del 1% en el precio real de los cigarrillos, se espera que la cantidad demandada de cigarrillos disminuya en un 1.213%, manteniendo todo lo demás constante. Esto mostrando una demanda elastica.
 
@@ -739,7 +700,7 @@ Para que una variable sea un instrumento válido, debe cumplir con dos condicion
 
 En este caso, la variable *rtdiff* (diferencia en impuestos reales) podría ser un instrumento válido para la regresión de variables instrumentales de la ecuación (4) porque la diferencia entre impuestos reales puede afectar al precio del cigarrillos (rprice) y, por lo tanto, influir en la cantidad demandada de cigarrillos (packs). Esto cumple con la condición de relevancia.
 
-Ahora, en cuanto a la exogeneidad, *rtdiff* no debería estar correlacionada con el término de error (ε) en la ecuación de demanda. Si los cambios en los impuestos reales son determinados por factores externos al mercado de cigarrillos y no están relacionados con las preferencias de los consumidores o factores no observados que afectan la demanda, entonces *rtdiff* cumpliría con la condición de exogeneidad. 
+Ahora, en cuanto a la exogeneidad, *rtdiff* no debería estar correlacionada con el término de error (ε) en la ecuación de demanda. Si los cambios en los impuestos reales son determinados por factores externos al mercado de cigarrillos y no están relacionados con las preferencias de los consumidores o factores no observados que afectan la demanda, entonces *rtdiff* cumpliría con la condición de exogeneidad.
 
 Por lo tanto, si se cumplen ambas condiciones, *rtdiff* sería un instrumento válido para estimar la elasticidad precio de la demanda de cigarrillos utilizando regresión de variables instrumentales.
 
@@ -758,6 +719,7 @@ Aca nos fijamos en el estadistico F de la prueba de "Weak instruments", que nos 
 ### e) Estime la regresión de la ecuación (4) utilizando la variable *rtdiff* como instrumento, para 1985 y 1995. Presente los resultados en una misma Tabla. ¿Cuál es el valor de la elasticidad precio de la demanda? Interprete los valores.
 
 Para esta regresión usaremos MC2E (Mínimos Cuadrados en Dos Etapas) utilizando la variable *rtdiff* como instrumento para el precio real de los cigarrillos (rprice).
+
 ```{r}
 # Estimación IV para 1985
 modelo_iv_85 <- ivreg(log(packs) ~ log(rprice) | rtdiff, data = df85)
@@ -777,8 +739,7 @@ Ahora en este apartado si nos mantenemos en elasticidad aunque ligeramente mas r
 
 ### f) Ahora, comparemos los resultados presentados en los literales a) y e), en términos de política pública. ¿Cuál debería ser el precio de venta después de impuestos de los cigarrillos necesario para lograr una reducción del 20% en el consumo de cigarrillos, en 1995? Haga los cálculos utilizando las elasticidades del literal a) sin corregir el problema de endogeneidad y después con las elasticidades del literal e) corrigiendo por endogeneidad. Compare los resultados, resaltando la importancia de corregir por endogeneidad.
 
-Para hacer estos cálculos, utilizaremos la fórmula de la elasticidad precio de la demanda:
-$$
+Para hacer estos cálculos, utilizaremos la fórmula de la elasticidad precio de la demanda: $$
 \text{Elasticidad} = \frac{\%\Delta Q}{\%\Delta P}
 $$
 
@@ -800,8 +761,7 @@ $$
 
 Esto significa que, según la elasticidad sin tratamiento por endogeneidad, el precio de venta después de impuestos de los cigarrillos debería aumentar en aproximadamente un 16.5% para lograr una reducción del 20% en el consumo de cigarrillos en 1995.
 
-Ahora, utilizando la elasticidad corregida por endogeneidad (MC2E):
-$$
+Ahora, utilizando la elasticidad corregida por endogeneidad (MC2E): $$
 -1.084 = \frac{-20\%}{\%\Delta P}
 $$
 
@@ -846,3 +806,4 @@ summary(modelo_mc2e_income, diagnostics = TRUE)
 
 El análisis muestra que para estimar la demanda de cigarrillos hay que tratar con cuidado la endogeneidad. Aunque las pruebas estadísticas sugieren una exogeneidad apenas marginal, el modelo de Variables Instrumentales (MC2E) entrega estimaciones más alineadas con la teoría económica. La diferencia en las elasticidades encontradas ($-1.407$ en MCO frente a $-1.277$ en MC2E) deja ver que si se ignora la simultaneidad, se podrían diseñar políticas de impuestos con una idea equivocada de qué tan sensible es el consumo al precio, y eso puede afectar los objetivos de salud pública. Por eso, es importante usar métodos que corrijan la endogeneidad para tener estimaciones más precisas y políticas más efectivas.
 
+Para ver el codigo de R dar click en el siguiente enlace. [link](https://github.com/Juan-Moreno1/TE-IA2/blob/9edf8b2e72f0c708e679da8ac5b0b6665d8e4ee2/taller1TE.qmd)
