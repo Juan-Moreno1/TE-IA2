@@ -1,0 +1,848 @@
+---
+title: "Taller 1: Análisis de Demanda y Endogeneidad"
+subtitle: "Tópicos en Econometría"
+author:
+  - name: "Juan Diego Moreno Sánchez"
+    email: "juan.moreno31@est.uexternado.edu.co"
+date: "`r Sys.Date()`"
+
+profesor: "Jacobo Campo Robledo"
+
+format:
+  pdf:
+    latex-engine: xelatex
+    papersize: letter
+    geometry:
+      - top=30mm
+      - left=25mm
+      - right=25mm
+      - bottom=30mm
+    header-includes: |
+      \usepackage{fvextra}
+      \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
+    toc: true
+    toc-title: "Contenido"
+    toc-depth: 1
+    number-sections: true
+    colorlinks: true 
+
+execute:
+  echo: false
+  warning: false
+---
+
+
+```{r}
+library(ggplot2)
+library(lmtest)
+library(tidyverse)
+library(randomForest)
+library(AER)
+library(Metrics)
+library(readxl)
+library(tseries)
+library(lmtest)
+library(car)
+library(corrplot)
+library(MASS)
+library(writexl)
+library(WriteXLS)
+library(stargazer)
+library(aod)
+library(nlme)
+library(sandwich)
+library(wooldridge)
+library(readxl)
+library(lubridate)
+library(patchwork)
+```
+
+## EJERCICIO 1 – Responda, Defina y Explique
+
+### a) ¿Cuáles supuestos debe cumplir el modelo de regresión para obtener estimadores MELI para los parámetros estimados por MCO?
+
+Para que el modelo de regresión esté bien especificado y los estimadores por MCO tengan buenas propiedades (y bajo normalidad coincidan con los de máxima verosimilitud), se suelen asumir varios supuestos:
+
+1. **Linealidad:** la relación entre la variable dependiente y las explicativas debe ser lineal en los parámetros.  
+2. **Independencia:** las observaciones deben ser independientes entre sí.  
+3. **Homoscedasticidad:** la varianza del término de error debe ser constante para todas las observaciones.  
+4. **Normalidad:** los errores deberían distribuirse normalmente (esto es más fuerte y no siempre es estrictamente necesario).  
+5. **No multicolinealidad perfecta:** las variables explicativas no deben estar perfectamente correlacionadas.  
+6. **No autocorrelación:** los errores no deben estar correlacionados entre ellos.  
+7. **Exogeneidad:** las variables explicativas no deben estar correlacionadas con el error.
+
+
+### b) ¿Cuáles son las propiedades de los parámetros estimados por MCO?
+
+Los estimadores por MCO tienen varias propiedades importantes:
+
+1. **Insesgadez:** en promedio, el estimador coincide con el verdadero parámetro.  
+2. **Consistencia:** cuando el tamaño de muestra crece, el estimador se aproxima al valor real.  
+3. **Eficiencia:** dentro de los estimadores lineales e insesgados, MCO tiene la menor varianza.
+
+
+### c) Defina el problema de endogeneidad en un modelo de regresión. ¿Cómo se puede solucionar? ¿Con cuáles métodos?
+
+La endogeneidad aparece cuando alguna variable explicativa está correlacionada con el término de error. Esto genera estimadores sesgados y además inconsistentes. Puede surgir por omitir variables relevantes, por simultaneidad o incluso por errores de medición.
+
+Para corregirla se pueden usar métodos como Variables Instrumentales (VI), Mínimos Cuadrados en Dos Etapas (MC2E), modelos de efectos fijos o incluso técnicas más avanzadas dependiendo del problema.
+
+
+### d) Explique el método de estimación “Máxima Verosimilitud”.
+
+La Máxima Verosimilitud es un método que consiste en elegir los parámetros que maximizan la probabilidad de observar los datos que realmente se tienen. Es decir, se construye una función de verosimilitud y se buscan los valores que la hacen lo más grande posible. 
+
+Este método es especialmente útil cuando se tiene una distribución específica para los errores o cuando se trabaja con modelos no lineales. Bajo ciertas condiciones, los estimadores de máxima verosimilitud son consistentes, asintóticamente normales y eficientes.
+
+## EJERCICIO 2 - Estructura de Costos en un Mercado Competitivo
+
+Ustedes han sido contratados por una firma de consultoría nacional para estimar la función de Costos de una industria competitiva en la que participan 30 empresas. Considere la siguiente función de costos totales de la industria:
+
+$$
+CT_i = \beta_0 + \beta_1 Y_i + \beta_2 Y_i^2 + \beta_3 Y_i^3 + \varepsilon_i
+$$
+
+Donde $CT_i$ representa el costo total para la empresa $(𝑖)$ medido en millones de pesos y $Y_i$ representa el nivel de producción de la empresa $(𝑖)$ medido en miles de unidades.
+
+Utilizando los datos del archivo “Función_CostosTotales.xlsx”, usted y su pareja deben elaborar un informe que recoja el análisis econométrico.
+
+### a) Estime la función de costos totales de la industria y repórtela en una tabla.
+
+Para resolver este punto vamos a estimar la función de costos totales utilizando regresión lineal. Primero, cargamos los datos desde el archivo Excel:
+
+```{r}
+df <- read_excel("2. Función_Costostotales.xlsx")
+# leeemos el archivo excel y lo guardamos en un objeto llamado df
+```
+
+En este espacio correremos la regresión lineal para estimar los parametros de la función de costos totales.
+
+```{r}
+modelo <- lm(CT ~ Y + I(Y^2) +I(Y^3) , data = df)
+stargazer(modelo, type = "text", title = "Resultados de la regresión", align = TRUE, no.space = TRUE)
+# dejamos la regresión lineal que se nos habia propuesto para obtener sus betas
+```
+
+Como primer vistazo podemos observar que el modelo con la prueba *F* es significativo, ademas los coeficientes de manera indiviudal son significativos.
+
+### b) Escriba la ecuación de costos estimados.
+
+La ecuación de costos estimados es la siguiente:
+
+$$
+\hat{CT_i} = 185.531 +  22.548Y_i -3.340Y_i^2 + 0.634Y_i^3
+$$
+
+### c) Calcule y grafique las siguientes funciones a partir de la ecuación estimada. Pista: calcule las derivadas y luego reemplace los valores de los betas estimados en cada ecuación.
+
+i. Función de costo total
+
+la función de costo total es la siguiente:
+$$
+\hat{CT_i} = 185.531 +  22.548Y_i -3.340Y_i^2 + 0.634Y_i^3
+$$
+
+Que la misma de la parte superior.
+
+ii. Función de costo marginal (como cambia el costo total cuando cambia la producción)
+
+la función de costo marginal se obtiene al derivar la función de costo total con respecto a la producción $Y_i$:
+$$
+CM_i = \frac{d\hat{CT_i}}{dY_i} = 22.548 - 2 \cdot 3.340Y_i + 3 \cdot 0.634Y_i^2 = 22.548 - 6.680Y_i + 1.902Y_i^2
+$$
+
+Asi obtenemos la función de costo marginal, que nos indica cómo cambia el costo total cuando cambia la producción.
+
+iii. Función de costo medio (el costo total dividido la producción)
+
+La función de costo medio se obtiene dividiendo la función de costo total por la producción $Y_i$:
+$$
+CM_i = \frac{\hat{CT_i}}{Y_i} = \frac{185.531 +  22.548Y_i -3.340Y_i^2 + 0.634Y_i^3}{Y_i} = \frac{185.531}{Y_i} + 22.548 - 3.340Y_i + 0.634Y_i^2
+$$
+
+iv. Función de costo variable medio (el costo variable dividido la producción)
+
+El costo variable se obtiene restando el costo fijo (intercepto) del costo total:
+$$
+CV_i = \hat{CT_i} - 185.531 = 22.548Y_i -3.340Y_i^2 + 0.634Y_i^3
+$$
+
+Ahora graficaremos las funciones de costo total, costo marginal, costo medio y costo variable medio utilizando ggplot2:
+
+```{r}
+# Crear un nuevo data frame para graficar
+Y_seq <- seq(min(df$Y), max(df$Y), length.out = 100)
+costos <- data.frame(
+  Y = Y_seq,
+  CT = 185.531 + 22.548 * Y_seq - 3.340 * Y_seq^2 + 0.634 * Y_seq^3,
+  CM = 22.548 - 6.680 * Y_seq + 1.902 * Y_seq^2,
+  CMe = (185.531 / Y_seq) + 22.548 - 3.340 * Y_seq + 0.634 * Y_seq^2,
+  CVMe = (22.548 * Y_seq - 3.340 * Y_seq^2 + 0.634 * Y_seq^3) / Y_seq
+)
+# Graficar las funciones
+ggplot(costos, aes(x = Y)) +
+  geom_line(aes(y = CT, color = "Costo Total")) +
+  geom_line(aes(y = CM, color = "Costo Marginal")) +
+  geom_line(aes(y = CMe, color = "Costo Medio")) +
+  geom_line(aes(y = CVMe, color = "Costo Variable Medio")) +
+  labs(title = "Funciones de Costos", x = "Producción (Y)", y = "Costos") +
+  scale_color_manual(values = c("blue", "red", "green", "orange")) +
+  theme_minimal() +
+  theme(legend.title = element_blank())
+```
+
+### d) Interprete los coeficientes estimados (tenga en cuenta que es una función de costo total, es decir, solo hay dos costos que la componen, el costo fijo y el costo variable). Pista: Utilice la derivada de la función de producción con respecto a la producción.
+
+Los coeficientes estimados en la función de costos totales representan lo siguiente:
+- El intercepto (185.531) representa el costo fijo de la empresa, es decir, el costo que incurre la empresa incluso cuando no produce nada.
+- El coeficiente de $Y$ (22.548) representa el costo variable por unidad de producción, es decir, el costo adicional que incurre la empresa por cada unidad adicional producida.
+- El coeficiente de $Y^2$ (-3.340) indica que el costo variable disminuye a medida que la producción aumenta, lo que sugiere economías de escala.
+- El coeficiente de $Y^3$ (0.634) indica que el costo variable aumenta a medida que la producción aumenta, lo que sugiere deseconomías de escala a niveles de producción más altos.
+
+### e) Realice un análisis de los resultados del modelo (significancia individual, significancia conjunta, $R^{2}$.
+
+El análisis de los resultados del modelo muestra que:
+
+El resultado de todos los coeficientes son significativos al 0.01, lo que indica que cada uno de los términos $(Y, Y^2, Y^3)$ tiene un impacto significativo en el costo total.
+
+El f calculado del modelo nos da  4,849.5 con un p-valor de 0.01 lo que indica que el modelo es significativo en su conjunto.
+
+### f) Aplique pruebas de Autocorrelación (Correlograma (Box-Pierce–Ljung-Box), Durbin-Watson y Breusch-Godfrey), Heteroscedasticidad (Breusch-Pagan y White (sin términos cruzados)) y Normalidad (Jarque-Bera y Shapiro-Wilk). Presente el resultado de cada prueba de manera ordenada, comente sus resultados y conclusión.
+
+Para realizar las pruebas de autocorrelación, heteroscedasticidad y normalidad, utilizaremos las siguientes funciones en R:
+
+```{r}
+library(lmtest)
+library(tseries)
+library(knitr)
+library(kableExtra)
+library(dplyr)
+
+# --- Tests ---
+dw_test <- dwtest(modelo)
+bg_test <- bgtest(modelo)
+box_test <- Box.test(residuals(modelo), type = "Ljung-Box")
+
+bp_test <- bptest(modelo)
+# TEST DE WHITE CORREGIDO:
+# La prueba de White original requiere los cuadrados y productos de las X.
+# Al tener solo Y como variable base, usamos la fórmula con potencias.
+white_test <- bptest(modelo, ~ Y + I(Y^2) + I(Y^3), data = df)
+
+jb_test <- jarque.bera.test(residuals(modelo))
+shapiro_test <- shapiro.test(residuals(modelo))
+
+# --- Tabla ---
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+# --- Construcción de la Tabla con niveles 0.05 y 0.10 ---
+# --- 1. Construcción de la Tabla con lógica independiente ---
+tabla_tests <- tibble(
+  Prueba = c(
+    "Durbin–Watson",
+    "Breusch–Godfrey",
+    "Ljung–Box",
+    "Breusch–Pagan",
+    "White",
+    "Jarque–Bera",
+    "Shapiro–Wilk"
+  ),
+  Estadistico = c(
+    unname(dw_test$statistic), unname(bg_test$statistic), unname(box_test$statistic),
+    unname(bp_test$statistic), unname(white_test$statistic),
+    unname(jb_test$statistic), unname(shapiro_test$statistic)
+  ),
+  `p-valor` = c(
+    dw_test$p.value, bg_test$p.value, box_test$p.value,
+    bp_test$p.value, white_test$p.value,
+    jb_test$p.value, shapiro_test$p.value
+  )
+) %>%
+  mutate(
+    # Lógica de texto: cada columna con su propio umbral
+    `Decisión (5%)` = ifelse(`p-valor` < 0.05, "Rechaza H0", "No rechaza H0")
+  )
+
+# --- 2. Aplicación de Formato y Colores ---
+tabla_tests %>%
+  kable(caption = "Pruebas de diagnóstico: Comparativa de niveles de significancia", 
+        digits = 4, align = "c") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE) %>%
+  # Color para la columna del 5%
+  column_spec(4, bold = TRUE, color = "white", 
+              background = ifelse(tabla_tests$`p-valor` < 0.05, "#D32F2F", "#388E3C"))
+```
+
+Aca podemos observar como la prueba de Durbin-Watson nos indica que hay correlación con los residuos en el modelo, pero en contra parte la prueba Beusch-Godfrey no encuentra evidencia de autocorrelación, lo que puede indicar que la autocorrelación detectada por Durbin-Watson es de primer orden.
+
+Ahora la prueba de White nos indica que existe problemas de heteroscedasticidad en el modelo, lo que puede afectar la eficiencia de los estimadores.
+
+Ademas la prueba de Jarque-Bera y Shapiro-Wilk nos indican que los residuos siguen una distribución normal.
+
+### g) Calcule el nivel de producción y el nivel de precio al que las firmas salen de la industria. Muéstrelo matemática y gráficamente.
+
+Para calcular el nivel de producción al que las firmas salen de la industria, debemos encontrar el punto en el que el costo marginal es igual al precio de mercado. En un mercado competitivo, el precio de mercado es igual al costo marginal en el punto de salida.
+
+Matemáticamente, esto se expresa como:
+$$
+CM_i = P
+$$
+
+Donde $P$ es el precio de mercado. Para encontrar el nivel de producción, debemos resolver la ecuación del costo marginal igual al precio de mercado, que se expresa en la siguiente igualdad:
+
+$$
+ 22.548 - 6.680Y_i + 1.902Y_i^2 = P
+$$
+
+Ahora vamos a dejepajar el precio de mercado como una variable y resolveremos la ecuación para encontrar el nivel de producción $Y_i$:
+
+$$
+Y = \frac{6.680 - \sqrt{(-6.680)^2 - 4 \cdot 1.902 \cdot (22.548 - P)}}{2 \cdot 1.902}
+$$
+
+Y asi encontramos el optimo de producción al que las firmas salen de la industria, dependiendo del precio de mercado.
+
+Ahora vamos a calcular el punto de cierre, el cual se expresa de la siguiente forma:
+$$
+CT(Y)=185.531+22.548Y-3.340Y^2+0.634Y^3
+$$
+
+Dividimos el costo total entre la producción para obtener el costo variable medio:
+
+$$
+CV(Y)=22.548Y-3.340Y^2+0.634Y^3,\qquad CF=185.531
+$$
+
+
+
+$$
+AVC(Y)=\frac{CV(Y)}{Y}=22.548-3.340Y+0.634Y^2
+$$
+
+
+
+$$
+\text{Punto de cierre:}\quad P_{\text{cierre}}= Cm_i(Y_{\text{cierre}})=AVC(Y_{\text{cierre}})
+$$
+
+Replazando la ecuación del costo marginal y el costo variable medio en la ecuación del punto de cierre, tenemos:
+$$
+22.548-3.340Y_i+0.634Y_i^2=22.548 - 6.680Y_i + 1.902Y_i^2 \text{ lo que es igual a } 3.340Y_i - 1.268Y_i^2 = 0
+$$
+
+Despejamos $Y_i$ para encontrar el nivel de producción al que las firmas salen de la industria:
+$$
+Y_i = \frac{3.340}{1.268} \approx 2.634
+$$
+
+
+Ahora que tenemos el nivel de producción al que las firmas salen de la industria, podemos calcular el nivel de precio al que las firmas salen de la industria utilizando la función de costo variable medio:
+
+$$
+P_{\text{cierre}}=AVC(Y_{\text{cierre}})
+=22.548-3.340(2.634)+0.634(2.634)^2
+\approx 18.150
+$$
+
+```{r}
+# 1. Definir las funciones basadas en tu ejercicio
+mc_func <- function(Y) { 22.548 - 6.680*Y + 1.902*Y^2 }
+avc_func <- function(Y) { 22.548 - 3.340*Y + 0.634*Y^2 }
+
+# Punto de cierre calculado
+y_cierre <- 2.634
+p_cierre <- 18.150
+
+# 2. Crear el data frame para graficar
+y_vals <- seq(0, 7, length.out = 100)
+df <- data.frame(
+  Y = y_vals,
+  MC = mc_func(y_vals),
+  AVC = avc_func(y_vals)
+)
+
+# 3. Generar la gráfica
+ggplot(df, aes(x = Y)) +
+  # Curvas de costos
+  geom_line(aes(y = AVC, color = "Costo Variable Medio (AVC)"), size = 1.2) +
+  geom_line(aes(y = MC, color = "Costo Marginal (MC)"), size = 1.2) +
+  # Punto de cierre
+  geom_point(aes(x = y_cierre, y = p_cierre), color = "red", size = 4) +
+  # Líneas punteadas hacia los ejes
+  geom_segment(aes(x = y_cierre, y = 0, xend = y_cierre, yend = p_cierre), linetype = "dashed") +
+  geom_segment(aes(x = 0, y = p_cierre, xend = y_cierre, yend = p_cierre), linetype = "dashed") +
+  # Etiquetas y formato
+  labs(title = "Punto de Cierre de la Firma",
+       subtitle = paste("Punto de salida (corto plazo) en Y =", y_cierre, "y P =", p_cierre),
+       x = "Nivel de Producción (Y)",
+       y = "Precio / Costo",
+       color = "Curvas") +
+  theme_minimal() +
+  scale_color_manual(values = c("Costo Variable Medio (AVC)" = "blue", "Costo Marginal (MC)" = "darkgreen")) +
+  annotate("text", x = y_cierre +2, y = p_cierre-3.5, label = "Punto de Cierre", color = "black", fontface = "bold")
+```
+
+
+### h) Pruebe la siguiente hipótesis con un nivel de significancia del 5%. “Una de las firmas que participan en la industria le manifiestan que según sus cálculos el nivel de producción al que una firma tiene que cerrar es de 4.000 unidades”.
+
+Para probar la hipótesis de que el nivel de producción al que una firma tiene que cerrar es de 4.000 unidades, podemos plantear las siguientes hipótesis:
+$$
+H_0: Y_{\text{cierre}} = 4 \text{ la firma cierra a 4.000 uniadades}
+$$
+$$
+H_a: Y_{\text{cierre}} \neq 4 \quad \text{(La firma no cierra a 4.000 unidades)}  
+$$
+
+$$
+\text{otra forma de plantear la hipótesis es:}
+H_0: b_2 + 8b_3 = 0 \quad \text{(La firma cierra a 4.000 unidades)}
+$$
+
+```{r}
+linearHypothesis(modelo, "I(Y^2) + 8*I(Y^3) = 0",, test = "Chisq" )
+```
+
+Podemos observar que el valor p de la prueba es igual a 0.0851, lo que nos indica que no podemos rechazar la hipotesis nula al nivel de significancia del 5%, lo que sugiere que no hay suficiente evidencia para afirmar que el nivel de producción al que una firma tiene que cerrar es diferente de 4.000 unidades. 
+
+### i) Aplique una prueba de Normalidad, Homoscedasticidad y no Autocorrelación, para determinar si el modelo cumple con los supuestos clásicos. ¿Existe algún problema econométrico?
+
+Ya fue realizado en la parte superior del ejercicio, donde se aplicaron las pruebas de Jarque-Bera y Shapiro-Wilk para normalidad, Breusch-Pagan y White para heteroscedasticidad, y Durbin-Watson y Breusch-Godfrey para autocorrelación.
+
+## EJERCICIO 3 – Modelo de Regresión Múltiple (Test de Chow y Variables Dummy)
+
+(Utilice R para las estimaciones)
+
+El archivo "demandadinero.xls" contiene la información para estimar una función de demanda por dinero para Dinamarca. La información es trimestral y cubre el periodo 1974:1 a 1987:3.
+
+**Modelo a estimar:**
+
+$$
+lrm_{t} = \beta_{0} + \beta_{1}lry_{t} + \beta_{2}ib_{t} + \beta_{3}id_{t} + \varepsilon_{t}
+$$
+
+Donde:
+
+- $lrm_{t}$ es el logaritmo de M2 (en términos reales).
+- $lry_{t}$ es el logaritmo del ingreso real.
+- $ib_{t}$ es una tasa de interés sobre bonos.
+- $id_{t}$ es una tasa de interés sobre depósitos.
+
+
+```{r}
+# vamos a leer la base de datos
+dfd <- read_excel("demandadinero.xls")
+```
+
+```{r}
+#vamos a graficar las series lrm
+ggplot(dfd, aes(x = as.Date(paste(year, quarter, "01", sep = "-"), format = "%Y-%m-%d"), y = lrm)) +
+  geom_line(color = "blue") +
+  labs(title = "Logaritmo de M2 (lrm)", x = "Fecha", y = "lrm") +
+  theme_minimal() +
+  geom_point(data = subset(dfd, year == 1980 & quarter == 2), aes(x = as.Date(paste(year, quarter, "01", sep = "-"), format = "%Y-%m-%d"), y = lrm), color = "red", size = 3) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+### a) Test de Chow
+
+Utilizando el *test de Chow*, compruebe la existencia (o no) de un cambio estructural en la función de demanda de dinero para Dinamarca en 1980:2. Comente el resultado.
+
+i.  Escriba las Hipótesis (nula y alterna).
+ii. Escriba los modelos a estimar (R y U).
+iii. Presenta una tabla con la estimación de cada modelo.
+iv. Muestre el cálculo del Estadístico de Prueba (F).
+v.  Concluya.
+
+
+Para resolver este punto, primero debemos definir las hipótesis para el test de Chow: 
+**Hipótesis Nula ($H_0$):** No existe cambio estructural en 1980:2. Todos los coeficientes asociados a la variable dummy y sus interacciones son iguales a cero.
+$$
+H_0: \alpha_0 = \alpha_1 = \alpha_2 = \alpha_3 = 0
+$$
+
+**Hipótesis Alterna ($H_1$):** Existe cambio estructural en 1980:2. Al menos uno de los coeficientes asociados a la variable dummy o sus interacciones es distinto de cero.
+$$
+H_1: \text{Al menos un } \alpha_i \neq 0 \quad \text{para } i = 0, 1, 2, 3
+$$
+
+
+Ahora vamos a definir los modelos restringido (R) y no restringido (U):
+
+Modelo Restringido (R):
+$$
+lrm_{t} = \beta_{0} + \beta_{1}lry_{t} + \beta_{2}ib_{t} + \beta_{3}id_{t} + \varepsilon_{t}
+$$
+
+Modelo No Restringido (U):
+$$
+\begin{aligned} lrm_{t} = &\beta_{0} + \beta_{1}lry_{t} + \beta_{2}ib_{t} + \beta_{3}id_{t} + \\
+&\alpha_{0}D_{t} + \alpha_{1}(D_{t} \cdot lry_{t}) + \alpha_{2}(D_{t} \cdot ib_{t}) + \alpha_{3}(D_{t} \cdot id_{t}) + \varepsilon_{t}
+\end{aligned}
+$$
+
+Donde $D_t$ es una variable dummy que toma el valor de 0 para los periodos anteriores a 1980:2 y 1 para los periodos posteriores a 1980:2.
+
+Ahora vamos a estimar ambos modelos de series de tiempo utilizando regresión lineal y presentar los resultados en una tabla:
+
+```{r}
+
+
+# Supongamos que tus columnas son 'year' (1980) y 'quarter' (1, 2, 3, 4)
+# Creamos una columna de fecha trimestral
+dfd$dateq <- as.yearqtr(paste(dfd$year, dfd$quarter, sep = "-"))
+
+# Creamos la dummy: 1 si es 1980 Q2 o posterior, 0 si es anterior
+dfd$D <- ifelse(dfd$dateq >= as.yearqtr("1980-2"), 1, 0)
+#tengo que mirar bien este codigo
+
+# Modelo Restringido (R)
+modelo_R <- lm(lrm ~ lry + ib + id, data = dfd)
+# Modelo No Restringido (U)
+modelo_U <- lm(lrm ~ D * (lry + ib + id), data = dfd)
+# Presentar los resultados en una tabla
+stargazer(modelo_R,modelo_U, type = "text", title = "Resultados de las Regresiones", align = TRUE, no.space = TRUE)
+# muy lindo
+
+```
+
+Ahora vamos a realizar la prueba del estadistico F para comparar ambos modelos:
+```{r}
+# El '*' crea automáticamente D, lry, ib, id Y todas sus interacciones con D
+modelo_U_Chow <- lm(lrm ~ D * (lry + ib + id), data = dfd)
+modelo_R <- lm(lrm ~ lry + ib + id, data = dfd)
+
+# Esto te dará el Test de Chow real (Df = 4)
+anova(modelo_R, modelo_U_Chow)
+```
+
+El p-value que obtenemos con la prueba F es de 0.4411 lo que significa que no podemos rechazar la hipótesis nula a ningun valor de significancia, por lo tanto esto nos demuestra que no hay evidencia suficiente para afirmar un choque estructural en la función de demanda por dinero para Dinamarca en 1980-2.
+
+Por esto nos inclinamos a tomar el modelo restringido como el modelo preferido.
+
+### b) Variables Dummy
+
+Continuando con el ejercicio anterior, construya una *variable dummy* que toma el valor de cero entre 1974:1 y 1980:1, y uno entre 1980:2 y 1987:3. Utilizando esta *variable dummy* pruebe si hay evidencia estadística para demostrar la existencia (o no) de un cambio estructural en la función de demanda por dinero para Dinamarca en 1980:2. Específicamente:
+
+i.  Escriba las Hipótesis (nula y alterna).
+ii. Escriba los modelos a estimar (R y U).
+iii. Presenta una tabla con la estimación de cada modelo.
+iv. Muestre el cálculo del Estadístico de Prueba (F).
+v.  Concluya.
+
+En este punto vamos a establecer el cambio en el intercepto.
+
+**Hipótesis Nula ($H_0$):** No existe cambio estructural en 1980:2. El coeficiente asociado a la variable dummy es igual a cero.
+$$
+H_0: \alpha_0 = 0
+$$
+
+**Hipótesis Alterna ($H_1$):** Existe cambio estructural en 1980:2. El coeficiente asociado a la variable dummy es distinto de cero.
+$$
+H_1: \alpha_0 \neq 0
+$$
+
+Modelo Restringido (R):
+$$
+lrm_{t} = \beta_{0} + \beta_{1}lry_{t} + \beta_{2}ib_{t} + \beta_{3}id_{t} + \varepsilon_{t}
+$$
+
+Modelo No Restringido (U):
+$$
+lrm_{t} = \beta_{0} + \beta_{1}lry_{t} + \beta_{2}ib_{t} + \beta_{3}id_{t} + \alpha_{0}D_{t} + \varepsilon_{t}
+$$
+
+Ahora vamos a estimar ambos modelos utilizando regresión lineal y presentar los resultados en una tabla:
+
+```{r}
+# Crear la columna de fecha trimestral
+dfd$fecha <- as.yearqtr(paste(dfd$year, dfd$quarter, sep = "-"))
+
+# Definir el punto de quiebre (1980:2)
+punto_quiebre <- as.yearqtr("1980 Q2")
+
+# Crear la dummy: 0 antes de 1980:2, 1 desde 1980:2 en adelante
+dfd$D <- ifelse(dfd$fecha >= punto_quiebre, 1, 0)
+
+```
+
+```{r}
+# Modelo Restringido (R): Sin la variable dummy
+modelo_R1<- lm(lrm ~ lry + ib + id, data = dfd)
+
+# Modelo No Restringido (U): Incluyendo el cambio en el intercepto
+modelo_U_Dummy <- lm(lrm ~ lry + ib + id + D, data = dfd)
+
+# (Opcional) Ver los coeficientes de la dummy
+stargazer(modelo_R1,modelo_U_Dummy, type = "text", title = "Resultados de las Regresiones", align = TRUE, no.space = TRUE)
+```
+
+Ahora continuaremos con la prueba del estadístico F para comparar ambos modelos:
+
+```{r}
+# Prueba F para comparar los modelos
+anova(modelo_R1, modelo_U_Dummy)
+```
+
+El p-value obtenido es de 0.6555, lo que nos demuestra que ni siquiera hubo un cambio en el intercepto, osea que no hubo cambio en el nivel base de la demanda por dinero después de 1980:2. Por lo tanto, no hay evidencia suficiente para afirmar que existe un cambio estructural en la función de demanda por dinero para Dinamarca en 1980:2.
+
+### c) Supuestos Clásicos
+
+Aplique una prueba de Normalidad, Homoscedasticidad y no Autocorrelación, para determinar si el modelo cumple con los supuestos clásicos. ¿Existe algún problema econométrico? ¿Como podría corregirse? (No debe corregirlo, solo explicar cómo).
+
+```{r}
+library(lmtest)
+library(tseries)
+library(knitr)
+library(kableExtra)
+library(dplyr)
+
+# --- Tests ---
+dw_test <- dwtest(modelo_R1)
+bg_test <- bgtest(modelo_R1)
+box_test <- Box.test(residuals(modelo_R1), type = "Ljung-Box")
+
+bp_test <- bptest(modelo_R1)
+# TEST DE WHITE CORREGIDO:
+# La prueba de White original requiere los cuadrados y productos de las X.
+# Al tener solo Y como variable base, usamos la fórmula con potencias.
+# Prueba de White usando los valores ajustados
+white_test <- bptest(modelo_R1, varformula = ~ fitted(modelo_R) + I(fitted(modelo_R1)^2), data = dfd)
+
+jb_test <- jarque.bera.test(residuals(modelo_R1))
+shapiro_test <- shapiro.test(residuals(modelo_R1))
+
+# --- Tabla ---
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+# --- Construcción de la Tabla con niveles 0.05 y 0.10 ---
+# --- 1. Construcción de la Tabla con lógica independiente ---
+tabla_tests <- tibble(
+  Prueba = c(
+    "Durbin–Watson",
+    "Breusch–Godfrey",
+    "Ljung–Box",
+    "Breusch–Pagan",
+    "White",
+    "Jarque–Bera",
+    "Shapiro–Wilk"
+  ),
+  Estadistico = c(
+    unname(dw_test$statistic), unname(bg_test$statistic), unname(box_test$statistic),
+    unname(bp_test$statistic), unname(white_test$statistic),
+    unname(jb_test$statistic), unname(shapiro_test$statistic)
+  ),
+  `p-valor` = c(
+    dw_test$p.value, bg_test$p.value, box_test$p.value,
+    bp_test$p.value, white_test$p.value,
+    jb_test$p.value, shapiro_test$p.value
+  )
+) %>%
+  mutate(
+    # Lógica de texto: cada columna con su propio umbral
+    `Decisión (5%)` = ifelse(`p-valor` < 0.05, "Rechaza H0", "No rechaza H0")
+  )
+
+# --- 2. Aplicación de Formato y Colores ---
+tabla_tests %>%
+  kable(caption = "Pruebas de diagnóstico: Comparativa de niveles de significancia", 
+        digits = 4, align = "c") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = FALSE) %>%
+  # Color para la columna del 5%
+  column_spec(4, bold = TRUE, color = "white", 
+              background = ifelse(tabla_tests$`p-valor` < 0.05, "#D32F2F", "#388E3C"))
+```
+
+Primero con el test de Durbin-Watson, Breusch-Godfrey y Ljung-Box nos indican que hay una alitisima evidencia de autocorrelación en el modelo, lo que puede afectar la validez de los resultados. Para corregir este problema, se podrían utilizar métodos como la regresión con errores estándar robustos o modelos de series de tiempo que tengan en cuenta la autocorrelación, como modelos con errores autoregresivos.
+
+Segundo, en el test de Breusch-Pagan nos indica que no hay evidencia de heteroscedasticidad, pero en contraste el test de White nos indica que si hay evidencia de heteroscedasticidad, lo que suguiere que la heteroscedasticidad no es lineal. Para corregir este problema, se podrían utilizar errores estándar robustos o transformar la variable dependiente para estabilizar la varianza.
+
+Tercero, en el test de Jarque-Bera y Shapiro-Wilk nos indican que los residuos si siguen una distribución normal, lo que es un buen resultado para el modelo y no necesita corrección en este aspecto.
+Pero si lo necesitará seria utilizar transformaciones de la variable dependiente o utilizar métodos de estimación que no requieran normalidad, como la regresión robusta o modelos de regresión no paramétrica.
+
+
+## EJERCICIO 4 – Regresión con Variables Instrumentales (Endogeneidad)
+
+Una herramienta en la búsqueda de la reducción de las enfermedades y las muertes causadas por el tabaco —y en los costos o externalidades, en los que se incurre debido a esas enfermedades y que son soportados por el resto de la sociedad— consiste en gravar los cigarrillos tan duramente como para conseguir que el número de fumadores actuales se reduzca y se disuada a los potenciales nuevos fumadores de adquirir el hábito. Durante los últimos 40 años, diferentes países han aumentado los impuestos sobre el cigarrillo con el objetivo de reducir su consumo, basándose en estimaciones de la elasticidad de la demanda de cigarrillos.
+
+El archivo **“Cigarrillos.xlsx”** contiene información sobre el consumo de cigarrillos en Estados Unidos para 48 estados y para los años 1985 y 1995.
+
+A continuación, una descripción de las variables.
+
+| Variable | Descripción |
+|---|---|
+| *state* | 48 estados |
+| *year* | 1985, 1995 |
+| *cpi* | índice de precios al consumidor |
+| *population* | población en cada estado |
+| *packs* | número de paquetes de cigarrillos vendidos per cápita en cada estado |
+| *income* | ingreso nominal en cada estado |
+| *tax* | impuesto especial (al cigarrillo) estatal promedio para el año fiscal |
+| *price* | es el precio nominal promedio por paquete de cigarrillos (incluidos todos los impuestos) |
+| *taxs* | impuesto especial (al cigarrillo) estatal promedio para el año fiscal, incluido el impuesto sobre las ventas |
+
+Teniendo en cuenta que las variables de precios, ingresos e impuestos están en términos nominales, debemos transformarlas para tenerlas en términos reales, utilizando el índice de precios al consumidor (*cpi*); adicionalmente, el ingreso debe estar medido en términos per cápita. Lo primero que deben hacer, luego de cargar los datos, es crear las siguientes variables:
+
+$$
+rprice = \frac{price}{cpi} \\
+rincome = \frac{\left(\frac{income}{population}\right)}{cpi} \\
+rtdiff = \frac{(taxs - tax)}{cpi}
+$$
+
+El modelo que nos interesa inicialmente es:
+
+$$
+\log\!\left(Q^{cigarrillos}_{state}\right)
+= \beta_0 + \beta_1 \log\!\left(P^{cigarrillos}_{state}\right) + \varepsilon_t
+$$
+
+```{r}
+# vamos a leer la base de datos
+dfc <- read_excel("4. Cigarrillos.xlsx")
+# Ahora vamos a crear las variables que necesitamos para el ejercicio
+dfc$rprice <- dfc$price / dfc$cpi
+dfc$rincome <- (dfc$income / dfc$population) / dfc$cpi
+dfc$rtdiff <- (dfc$taxs - dfc$tax) / dfc$cpi
+df85 <- subset(dfc, year == 1985)
+df95 <- subset(dfc, year == 1995)
+```
+
+
+### a) Estime la ecuación (4) por MCO para 1985 y 1995. Presente los resultados en una misma Tabla. ¿Cuál es el valor de la elasticidad precio de la demanda en cada año? Interprete los valores.
+
+```{r}
+# vamos a estimar por MCO para 1985
+modelo_85 <- lm(log(packs) ~ log(rprice), data = df85)
+# vamos a estimar por MCO para 1995
+modelo_95 <- lm(log(packs) ~ log(rprice), data = df95)
+# Presentar los resultados en una tabla
+stargazer(modelo_85,modelo_95, type = "text", title = "Resultados de las Regresiones MCO", align = TRUE, no.space = TRUE)
+```
+
+Intepretación:
+En 1985 la elasticidad precio de la demanda de los cigarrillos es de -0.985, es decir que ante un aumento del 1% en el precio real de los cigarrillos, se espera que la cantidad demandada de cigarrillos disminuya en un 0.985%, manteniendo todo lo demás constante. Esto mostrando una demanda inelastica.
+
+En 1995 la elasticidad precio de la demanda de los cigarrillos es de -1.213, es decir que ante un aumento del 1% en el precio real de los cigarrillos, se espera que la cantidad demandada de cigarrillos disminuya en un 1.213%, manteniendo todo lo demás constante. Esto mostrando una demanda elastica.
+
+### b) Explique por qué la regresión MCO estimada no resulta apropiada para estimar la elasticidad precio de la demanda de cigarrillos.
+
+La regresión MCO estimada no resulta apropiada para estimar la elasticidad precio de la demanda de cigarrillos debido a un posible problema de endogeneidad. En este caso, el precio real de los cigarrillos (rprice) podría estar correlacionado con el término de error (ε) en la ecuación de demanda. Esto puede ocurrir si hay factores no observados que afectan tanto el precio como la cantidad demandada, como cambios en las preferencias de los consumidores, campañas antitabaco, o políticas gubernamentales que no se han incluido en el modelo.
+
+Además existen un problema muy claro de simultaneidad ya que el precio de los cigarrillos puede ser determinado por la cantidad demandada, es decir que el precio y la cantidad pueden influenciarse mutuamente, lo que viola uno de los supuestos clave del modelo de regresión lineal clásico y conduce a estimaciones sesgadas e inconsistentes de la elasticidad precio de la demanda.
+
+### c) Explique por qué la variable *rtdiff* es un instrumento válido para la regresión de variables instrumentales de la ecuación (4).
+
+Para que una variable sea un instrumento válido, debe cumplir con dos condiciones principales: relevancia y exogeneidad.
+
+En este caso, la variable *rtdiff* (diferencia en impuestos reales) podría ser un instrumento válido para la regresión de variables instrumentales de la ecuación (4) porque la diferencia entre impuestos reales puede afectar al precio del cigarrillos (rprice) y, por lo tanto, influir en la cantidad demandada de cigarrillos (packs). Esto cumple con la condición de relevancia.
+
+Ahora, en cuanto a la exogeneidad, *rtdiff* no debería estar correlacionada con el término de error (ε) en la ecuación de demanda. Si los cambios en los impuestos reales son determinados por factores externos al mercado de cigarrillos y no están relacionados con las preferencias de los consumidores o factores no observados que afectan la demanda, entonces *rtdiff* cumpliría con la condición de exogeneidad. 
+
+Por lo tanto, si se cumplen ambas condiciones, *rtdiff* sería un instrumento válido para estimar la elasticidad precio de la demanda de cigarrillos utilizando regresión de variables instrumentales.
+
+### d) ¿Es la variable *rtdiff* un instrumento débil?
+
+Para aceptar o negar esto tendremos que realizar una prueba de instrumentos débiles, que generalmente se basa en la estadística F del primer paso de la regresión de variables instrumentales. Si el valor de F es menor a 10, se considera que el instrumento es débil.
+
+```{r}
+library(AER)
+modelo_iv <- ivreg(log(packs) ~ log(rprice) | rtdiff, data = df95)
+summary(modelo_iv, diagnostics = TRUE)
+```
+
+Aca nos fijamos en el estadistico F de la prueba de "Weak instruments", que nos da un $F>10$ exactamente de 40.95, lo que nos indica que *rtdiff* no es un instrumento débil para la regresión de variables instrumentales de la ecuación (4).
+
+### e) Estime la regresión de la ecuación (4) utilizando la variable *rtdiff* como instrumento, para 1985 y 1995. Presente los resultados en una misma Tabla. ¿Cuál es el valor de la elasticidad precio de la demanda? Interprete los valores.
+
+Para esta regresión usaremos MC2E (Mínimos Cuadrados en Dos Etapas) utilizando la variable *rtdiff* como instrumento para el precio real de los cigarrillos (rprice).
+```{r}
+# Estimación IV para 1985
+modelo_iv_85 <- ivreg(log(packs) ~ log(rprice) | rtdiff, data = df85)
+# Estimación IV para 1995
+modelo_iv_95 <- ivreg(log(packs) ~ log(rprice) | rtdiff, data = df95)
+# Presentar los resultados en una tabla
+stargazer(modelo_iv_85,modelo_iv_95, type = "text", title = "Resultados de las Regresiones IV", align = TRUE, no.space = TRUE)
+```
+
+Como podemos ver en 1985 la elasticidad precio de la demanda de los cigarrillos es de -1.178, es decir que ante un aumento del 1% en el precio real de los cigarrillos, se espera que la cantidad demandada de cigarrillos disminuya en un 1.178%, manteniendo todo lo demás constante. Esto mostrando una demanda elastica.
+
+En este apartado pasamos de un lugar en el que (MCO) nos indicaba una demanda inelastica, a un lugar en el que (MC2E) nos indica una demanda elastica, lo que resalta la importancia de corregir por endogeneidad para obtener estimaciones más precisas y confiables de la elasticidad precio de la demanda de cigarrillos.
+
+Ademas en 1995 la elasticidad precio de la demanda de los cigarrillos es de -1.084, es decir que ante un aumento del 1% en el precio real de los cigarrillos, se espera que la cantidad demandada de cigarrillos disminuya en un 1.084%, manteniendo todo lo demás constante. Esto mostrando una demanda elastica.
+
+Ahora en este apartado si nos mantenemos en elasticidad aunque ligeramente mas reducida.
+
+### f) Ahora, comparemos los resultados presentados en los literales a) y e), en términos de política pública. ¿Cuál debería ser el precio de venta después de impuestos de los cigarrillos necesario para lograr una reducción del 20% en el consumo de cigarrillos, en 1995? Haga los cálculos utilizando las elasticidades del literal a) sin corregir el problema de endogeneidad y después con las elasticidades del literal e) corrigiendo por endogeneidad. Compare los resultados, resaltando la importancia de corregir por endogeneidad.
+
+Para hacer estos cálculos, utilizaremos la fórmula de la elasticidad precio de la demanda:
+$$
+\text{Elasticidad} = \frac{\%\Delta Q}{\%\Delta P}
+$$
+
+Donde $\%\Delta Q$ es el cambio porcentual en la cantidad demandada y $\%\Delta P$ es el cambio porcentual en el precio.
+
+Nosotros tenemos $\%\Delta Q = -20\%$ (una reducción del 20% en el consumo de cigarrillos).
+
+Ademas, tenemos dos elasticidades diferentes para 1995: la elasticidad sin corregir por endogeneidad (MCO) que es de -1.213, y la elasticidad corregida por endogeneidad (MC2E) que es de -1.084.
+
+Primero, utilizando la elasticidad sin corregir por endogeneidad (MCO):
+
+$$
+-1.213 = \frac{-20\%}{\%\Delta P}
+$$
+
+$$
+\%\Delta P = \frac{-20\%}{-1.213} \approx 16.5\%
+$$
+
+Esto significa que, según la elasticidad sin tratamiento por endogeneidad, el precio de venta después de impuestos de los cigarrillos debería aumentar en aproximadamente un 16.5% para lograr una reducción del 20% en el consumo de cigarrillos en 1995.
+
+Ahora, utilizando la elasticidad corregida por endogeneidad (MC2E):
+$$
+-1.084 = \frac{-20\%}{\%\Delta P}
+$$
+
+$$
+\%\Delta P = \frac{-20\%}{-1.084} \approx 18.45\%
+$$
+
+Esto significa que, según la elasticidad tratada por endogeneidad, el precio de venta después de impuestos de los cigarrillos debería aumentar en aproximadamente un 18.45% para lograr una reducción del 20% en el consumo de cigarrillos en 1995.
+
+La implicación de política publica es una subestimación del precio real que deberia aumentar el el gobierno para lograr desisentivar el consumo de cigarrillos.
+
+### g) Ahora estime la ecuación (4) incluyendo *rincome*, para 1995. Presente una Tabla con los resultados de la estimación MCO y la estimación MC2E utilizando como variables instrumentales *rtdiff* y *rtax*.
+
+Para esto, primero debemos crear la variable *rtax* que es el impuesto real, y luego estimar ambos modelos (MCO y MC2E) incluyendo *rincome* como variable explicativa adicional. Finalmente, presentaremos los resultados en una tabla.
+
+```{r}
+df95$rtax <- df95$tax / df95$cpi
+df85$rtax <- df85$tax / df85$cpi
+# Estimación MCO incluyendo rincome para 1995
+modelo_mco_income <- lm(log(packs) ~ log(rprice) + log(rincome), data = df95)
+# Estimación MC2E utilizando rtdiff y rtax como instrumentos para log(rprice) y log(rincome)
+# El ingreso entra en ambas partes porque es una variable exógena que se explica a sí misma
+modelo_mc2e_income <- ivreg(log(packs) ~ log(rprice) + log(rincome) | 
+                             rtdiff + rtax + log(rincome), 
+                           data = df95)
+# Presentar los resultados en una tabla
+stargazer(modelo_mco_income,modelo_mc2e_income, type = "text", title = "Resultados de las Regresiones MCO y MC2E con ingreso", align = TRUE, no.space = TRUE)
+```
+
+En esta tabla podemos observar como el metodo de OLS sobreestima la elasticidad precio de la demanda de los cigarrillos, y como el ingreso real tiene un efecto positivo sobre la cantidad demandada de cigarrillos, lo que sugiere que los cigarrillos pueden ser un bien normal.
+
+### h) Interprete los coeficientes de la estimación MC2E.
+
+A partir de la estimación por Mínimos Cuadrados en Dos Etapas (MC2E) para 1995, utilizando $rtdiff$ y $rtax$ como instrumentos, se obtienen las siguientes elasticidades:Elasticidad Precio ($\log(rprice)$): El coeficiente es de $-1.277$. Esto indica que, manteniendo el ingreso constante, ante un aumento del $1\%$ en el precio real de los cigarrillos, la cantidad demandada disminuye en un $1.277\%$. La demanda se mantiene en el rango elástico ($| -1.277 | > 1$), y el coeficiente es altamente significativo ($p < 0.01$).Elasticidad Ingreso ($\log(rincome)$): El coeficiente es de $0.280$. Esto implica que, ante un aumento del $1\%$ en el ingreso real per cápita, el consumo de cigarrillos aumenta en un $0.280\%$, manteniendo el precio constante. Dado que el signo es positivo, los resultados sugieren que los cigarrillos se comportan como un bien normal, aunque con una respuesta relativamente inelástica al ingreso.
+
+### i) Presente los resultados una Tabla con las pruebas de diagnóstico (*Instrumentos débiles, Exogeneidad de Wu-Hausman, Sobreidentificación de Sargan*) sobre la estimación MC2E del literal g). Presente la hipótesis nula y la interpretación del resultado de cada una.
+
+```{r}
+# Haremos la prueba de instrumentos débiles, exogeneidad de Wu-Hausman y sobreidentificación de Sargan utilizando el modelo MC2E
+summary(modelo_mc2e_income, diagnostics = TRUE)
+```
+
+El análisis muestra que para estimar la demanda de cigarrillos hay que tratar con cuidado la endogeneidad. Aunque las pruebas estadísticas sugieren una exogeneidad apenas marginal, el modelo de Variables Instrumentales (MC2E) entrega estimaciones más alineadas con la teoría económica. La diferencia en las elasticidades encontradas ($-1.407$ en MCO frente a $-1.277$ en MC2E) deja ver que si se ignora la simultaneidad, se podrían diseñar políticas de impuestos con una idea equivocada de qué tan sensible es el consumo al precio, y eso puede afectar los objetivos de salud pública. Por eso, es importante usar métodos que corrijan la endogeneidad para tener estimaciones más precisas y políticas más efectivas.
+
