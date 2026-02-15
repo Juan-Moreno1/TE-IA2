@@ -1,0 +1,8 @@
+# Ignorar todo
+*
+
+# No ignorar estas cosas
+!.gitignore
+! taller1TE.qmd
+! taller1TE.pdf
+
