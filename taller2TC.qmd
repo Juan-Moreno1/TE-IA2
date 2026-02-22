@@ -1,0 +1,549 @@
+---
+title: "Taller 2: Ejercicio de Procesos Estocásticos"
+subtitle: "Tópicos en Econometría"
+author:
+  - name: "Juan Diego Moreno Sánchez"
+    email: "juan.moreno31@est.uexternado.edu.co"
+date: "`r Sys.Date()`"
+
+profesor: "Jacobo Campo Robledo"
+
+format:
+  pdf:
+    latex-engine: xelatex
+    papersize: letter
+    geometry:
+      - top=30mm
+      - left=25mm
+      - right=25mm
+      - bottom=30mm
+    header-includes: |
+      \usepackage{fvextra}
+      \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,commandchars=\\\{\}}
+    toc: true
+    toc-title: "Contenido"
+    toc-depth: 1
+    number-sections: true
+    colorlinks: true 
+
+execute:
+  echo: false
+  warning: false
+header-includes:
+   - \usepackage{float}
+---
+
+## Ejercicio 1 – Responda, Defina y Explique
+
+**a) Teniendo en cuenta la definición de proceso estacionario. ¿Puede considerarse que un proceso ruido blanco es un proceso estacionario? Explique.**
+
+**Sí**, un proceso de ruido blanco se considera un proceso estacionario (específicamente en sentido amplio o *Weakly Stationary*). 
+
+**Explicación:**
+Para que un proceso $X(t)$ sea estacionario en sentido amplio, debe cumplir tres condiciones que el ruido blanco $w(t)$ satisface:
+
+1.  **Media constante:** La media es constante para todo $t$, $E[w(t)] = 0$.
+2.  **Varianza finita:** $E[w(t)^2] = \sigma^2  \neq  \infty$.
+3.  **Autocovarianza dependiente solo del desplazamiento ($\tau$):** La función de autocovarianza del ruido blanco es:
+    $$\gamma(\tau) = \begin{cases} \sigma^2 & \text{si } \tau = 0 \\ 0 & \text{si } \tau \neq 0 \end{cases}$$
+    Como la relación estadística entre dos puntos depende únicamente de la distancia temporal entre ellos y no del tiempo absoluto, cumple con la definición.
+
+---
+
+**b) Defina la propiedad de Ergodicidad.**
+
+La **ergodicidad** es una propiedad de algunos procesos estacionarios que permite determinar las estadísticas de todo el proceso a partir de una única realización (o muestra) lo suficientemente larga.
+
+En términos simples, un proceso es ergódico si los **promedios temporales** coinciden con los **promedios del conjunto** (esperanza matemática). 
+
+* **Ergodicidad en la media:** $$\lim_{T \to \infty} \frac{1}{T} \int_{0}^{T} X(t) dt = E[X(t)]$$
+    
+Si esta igualdad se cumple (con probabilidad 1), significa que no necesitamos observar múltiples trayectorias del proceso para conocer su comportamiento medio; basta con observar una sola trayectoria durante mucho tiempo.
+
+```{r}
+df <- read.csv("05bcf268-65b1-4315-946f-c97a5b84c216_Data.csv")
+```
+
+---
+
+## Ejercicio 2: Comparando la Tasa de Crecimiento Económico – En R
+
+Ingrese a la página del [Banco Mundial (World Development Indicators)](https://databank.worldbank.org/source/world-development-indicators), descargue la serie del **Crecimiento del PIB** (*GDP growth (annual %)*) para Chile, Colombia, Ecuador, México y Perú, para el periodo comprendido entre **1980 y 2024**, y realice lo siguiente:
+
+```{r}
+# Aunque existe una api de acceso del Banco mundial, lo hare con el link del profe :)
+# Entonces
+library(readr)
+df <- read_csv("05bcf268-65b1-4315-946f-c97a5b84c216_Data.csv")
+#ahora vamos a eliminar las filas con NA
+df_limpio <- na.omit(df)
+
+```
+
+```{r}
+
+library(dplyr)
+library(tidyr)
+library(stringr)
+
+df_long <- df %>%
+  # 1. Pasamos todas las columnas de años a una sola columna llamada "year"
+  # Seleccionamos desde la primera columna de año hasta la última
+  pivot_longer(
+    cols = starts_with("19") | starts_with("20"), 
+    names_to = "year", 
+    values_to = "gdp_growth"
+  ) %>%
+  # 2. Limpiamos el texto de la columna year (quitar " [YR1980]", etc.)
+  # Dejamos solo los primeros 4 dígitos y convertimos a número
+  mutate(
+    year = as.numeric(str_extract(year, "\\d{4}"))
+  ) %>%
+  drop_na(gdp_growth)
+
+
+```
+
+### a) Visualización de Series
+Grafique cada serie en gráficos separados. Indique el título y la fuente de la serie.
+
+
+```{r, fig.width=6.5, fig.height=2.2, fig.align='center', fig.pos='H', echo=FALSE}
+library(ggplot2)
+
+# Mantenemos nrow = 1 para que ocupe el mínimo espacio vertical
+ggplot(df_long, aes(x = year, y = gdp_growth, fill = `Country Code`)) +
+  geom_area(alpha = 0.5, show.legend = FALSE) + 
+  geom_line(size = 0.2) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red", size = 0.3) + 
+  facet_wrap(~ `Country Code`, nrow = 1, scales = "free_y") + 
+  labs(title = "Crecimiento del PIB Anual (1980-2024)",
+       x = "Año", 
+       y = "% Crecimiento",
+       caption = "Fuente: Banco Mundial (WDI)") +
+  theme_bw(base_size = 6) +
+  theme(
+    plot.title = element_text(size = 8, face = "bold"),
+    plot.caption = element_text(size = 5, hjust = 0),
+    panel.spacing = unit(0.2, "lines"),
+    axis.text.x = element_text(angle = 45, vjust = 0.5),
+    plot.margin = margin(2, 2, 2, 2)
+  )
+```
+
+---
+
+
+### b) Estadísticas Descriptivas Globales
+Para cada país calcule las estadísticas descriptivas (**Media, Mediana, desviación estándar, Mínimo, Máximo**) y repórtelas en una tabla ordenada (con título y fuente). 
+
+> **Nota:** Escriba un párrafo (mínimo 2 líneas) para cada país describiendo su comportamiento y apoyándose en estas estadísticas.
+
+```{r}
+library(knitr)
+library(kableExtra)
+
+# Calculamos las estadísticas descriptivas por país
+stats <- df_long %>%
+  group_by(`Country Code`) %>%
+  summarise(
+    Media = mean(gdp_growth, na.rm = TRUE),
+    Mediana = median(gdp_growth, na.rm = TRUE),
+    Desviacion_Estandar = sd(gdp_growth, na.rm = TRUE),
+    Minimo = min(gdp_growth, na.rm = TRUE),
+    Maximo = max(gdp_growth, na.rm = TRUE)
+  )
+stats %>%
+  mutate(across(where(is.numeric), ~ round(., 2))) %>% # Redondear a 2 decimales
+  kable(
+    caption = "Estadísticas Descriptivas del Crecimiento del PIB (1980-2024)", 
+    col.names = c("País", "Media", "Mediana", "Desv. Estándar", "Mínimo", "Máximo"),
+    align = "c"
+  ) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+    full_width = FALSE,
+    position = "center",
+    font_size = 14
+  ) %>%
+  row_spec(0, bold = TRUE, color = "white", background = "#2c3e50") %>% # Encabezado elegante
+  column_spec(1, bold = TRUE, border_right = TRUE) %>% # Resaltar columna de países
+  footnote(general = "Fuente: Elaboración propia con datos del Banco Mundial (WDI).")
+```
+
+Chile presenta una media de crecimiento del PIB del 4.10%, siendo esta la mas alta entre los paises analizados, los que nos indica que el pais tiene una de las mejores sendas de crecimiento economicó de la región.
+
+Colombia tiene un crecimiento promedio del 3.38%, siendo esta la segunda mas alta de la región analizada, y una desviación estándar del 2.68%, los que nos indica qye el país ha tenido un crecimiento relativamente estable en comparación con los demás países.
+
+Ecuador tiene un crecimiento promedio del 2.91%, siendo esta la cuarta mas alta de la región analizada,  lo que nos indica que el país ha tenido un crecimiento mas moderado en comparación con los demás países.
+
+Mexico tiene un crecimiento promedio del 2.24%, siendo este el mas bajo entre los paises analizados, esto posiblemente debido a las crisis económicas y sociales que ha enfrentado el país en las últimas décadas, lo que ha afectado su crecimiento económico.
+
+Peru tiene un crecimiento promedio del 3.10%, siendo esta la tercera mas alta de la región analizada, lo que nos indica que el país ha tenido un crecimiento relativamente bueno en comparación con los demás países, aunque no tan alto como Chile y Colombia, esto a pesar de sus inestabilidades politicas y sociales de las ultimas decadas.
+
+---
+
+### c) Análisis por Periodos
+Calcule las estadísticas descriptivas (las mismas del literal b) para cada serie desglosada por los siguientes periodos:
+
+- 1980 - 1989
+- 1990 - 1999
+- 2000 - 2009
+- 2010 - 2024
+
+Reporte los resultados en una tabla ordenada (con título y fuente). Escriba un párrafo para cada país comparando los cuatro periodos y apoyándose en las estadísticas.
+
+```{r}
+# 1. Creo la columna de periodos y calculo estadísticas
+stats_periodos <- df_long %>%
+  mutate(Periodo = case_when(
+    year >= 1980 & year <= 1989 ~ "1980 - 1989",
+    year >= 1990 & year <= 1999 ~ "1990 - 1999",
+    year >= 2000 & year <= 2009 ~ "2000 - 2009",
+    year >= 2010 & year <= 2024 ~ "2010 - 2024"
+  )) %>%
+  group_by(`Country Code`, Periodo) %>%
+  summarise(
+    Media = mean(gdp_growth, na.rm = TRUE),
+    Mediana = median(gdp_growth, na.rm = TRUE),
+    Desv_Std = sd(gdp_growth, na.rm = TRUE),
+    Min = min(gdp_growth, na.rm = TRUE),
+    Max = max(gdp_growth, na.rm = TRUE),
+    .groups = 'drop'
+  ) %>%
+  mutate(across(where(is.numeric), ~ round(., 2)))
+
+# 2. Tabla 
+stats_periodos %>%
+  kable(
+    caption = "Comparativa Histórica de Crecimiento del PIB por Periodos",
+    col.names = c("País", "Periodo", "Media (%)", "Mediana (%)", "Desv. Est.", "Mínimo", "Máximo"),
+    align = "llccccc"
+  ) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F) %>%
+  collapse_rows(columns = 1, valign = "middle") %>% # Une las celdas del nombre del país
+  row_spec(0, bold = TRUE, background = "#34495e", color = "white")
+```
+
+En el caso chileno se puede observar como el periodo Pos-dictadura (1990 en adelante) fue el periodo con el mayor crecimiento económico del país, mostrando una media del 6.23% en el periodo 1990-1999, y una media del 5.09% en el periodo 2000-2009, lo que nos indica que el país tuvo un crecimiento económico muy fuerte en las décadas posteriores a la dictadura, esto posiblemente a la democratización del sistema politico.
+
+Colombia tuvo un crecimiento economico más estable en el perido 2000-2009, con una media del 3.91%, lo que nos indica que el país tuvo un crecimiento económico relativamente bueno en esa década, esto posiblemente a la estabilización política y económica del país después de los violentos años 90.
+
+En el caso de Ecuador, el periodo 2000-2009 fue el periodo con el mayor crecimiento económico del país, mostrando una media del 3.92%, lo que nos indica que el país tuvo un crecimiento económico relativamente bueno en esa década, esto posiblemente a la estabilización política y económica del país después de los violentos años 90.
+
+En el caso de México fue al contrario, los periodos de violencia y inestabilidad politíca debido a la politíca de guerra contra el narcotráfico en los años 2000-2009, y la crisis económica de 2008-2009, fueron los periodos con el menor crecimiento económico del país, mostrando una media del 1.22% en el periodo 2000-2009, lo que nos indica que el país tuvo un crecimiento económico relativamente bajo en esa década.
+
+Para el caso de Perú, el periodo 2000-2009 fue el periodo con el mayor crecimiento económico del país, mostrando una media del 5.04%, lo que nos indica que el país tuvo un crecimiento económico relativamente bueno en esa década, esto posiblemente a la estabilización política y económica del país después de los violentos años 90, y a pesar de las inestabilidades politicas y sociales de las ultimas decadas, ademas su crecimiento se desacelera para la siguiente decada, esto posiblemente a la inestabilizdad politica del país.
+
+---
+
+### d) Estacionariedad
+¿Qué puede decir, al menos visualmente, acerca de la **estacionariedad** de la tasa de crecimiento de la economía de cada país?
+
+Visualmente los paises presentan una tendencia estacionaria en ciertos casos, como la decada de 2000-2009, posiblemente a la bonanza de las materias primas que se vivío en dicho años, pero también presentan periodos de alta volatilidad, como la decada de 1990-1999, posiblemente a las crisis económicas y sociales que se vivieron en la región durante esos años.
+
+---
+
+## Ejercicio 3 – Uso del Operador de Rezago
+
+El modelo Cobweb (*Teorema de la Telaraña*) se desarrolló inicialmente para explicar la volatilidad en los precios agrícolas, a partir de un modelo de oferta y demanda estático. Considere una formulación alternativa de este modelo llamado *expectativas adaptativas*. Sea el precio esperado en $t$ (denotado por $p_t^*$) un promedio ponderado del precio en $t-1$ y el precio esperado del periodo anterior:
+
+$$
+p_t^* = \alpha p_{t-1} + (1 - \alpha) p_{t-1}^* \tag{1}
+$$
+
+Claramente, cuando $\alpha = 1$, los esquemas de expectativas estáticas y adaptativas son equivalentes. Una característica interesante de este modelo es que puede verse como una ecuación de diferencias que expresa el precio esperado en función de su propio valor rezagado y la variable $p_{t-1}$.
+
+a) Utilice el operador de rezago para encontrar la solución. (*Pista: no elimine el operador de rezago durante el procedimiento*)
+
+b) Verifique la respuesta sustituyendo su resultado en la ecuación original.
+
+### a) Uso del operador de rezago para encontrar la solución
+
+Partimos de la ecuación de expectativas adaptativas dada:
+$$p_t^* = \alpha p_{t-1} + (1 - \alpha) p_{t-1}^* \tag{1}$$
+
+Aplicando el operador de rezago $L$, donde $L y_t = y_{t-1}$, podemos reescribir la ecuación como:
+$$p_t^* = \alpha L p_t + (1 - \alpha) L p_t^*$$
+
+Agrupamos los términos que contienen $p_t^*$ en el lado izquierdo:
+$$p_t^* - (1 - \alpha) L p_t^* = \alpha L p_t$$
+$$[1 - (1 - \alpha) L] p_t^* = \alpha L p_t$$
+
+Despejando el precio esperado $p_t^*$:
+$$p_t^* = \frac{\alpha L}{1 - (1 - \alpha) L} p_t$$
+
+Utilizando la propiedad de la serie geométrica para el operador inverso $\frac{1}{1 - z} = \sum_{i=0}^{\infty} z^i$, donde $z = (1 - \alpha)L$:
+$$p_t^* = \alpha L \left[ \sum_{i=0}^{\infty} (1 - \alpha)^i L^i \right] p_t$$
+$$p_t^* = \alpha \sum_{i=0}^{\infty} (1 - \alpha)^i L^{i+1} p_t$$
+
+Expandiendo la sumatoria, obtenemos la solución en términos de los precios pasados:
+$$p_t^* = \alpha p_{t-1} + \alpha(1-\alpha)p_{t-2} + \alpha(1-\alpha)^2 p_{t-3} + \dots$$
+
+---
+
+### b) Verificación de la respuesta
+
+Para verificar, sustituimos el resultado obtenido para $p_t^*$ y su rezago $p_{t-1}^*$ en la ecuación original (1).
+
+Sabemos que:
+$$p_{t-1}^* = \alpha p_{t-2} + \alpha(1-\alpha)p_{t-3} + \alpha(1-\alpha)^2 p_{t-4} + \dots$$
+
+Sustituimos en el lado derecho de la ecuación original $p_t^* = \alpha p_{t-1} + (1 - \alpha) p_{t-1}^*$:
+$$p_t^* = \alpha p_{t-1} + (1 - \alpha) [\alpha p_{t-2} + \alpha(1-\alpha)p_{t-3} + \alpha(1-\alpha)^2 p_{t-4} + \dots]$$
+
+Distribuyendo $(1 - \alpha)$:
+$$p_t^* = \alpha p_{t-1} + \alpha(1-\alpha) p_{t-2} + \alpha(1-\alpha)^2 p_{t-3} + \alpha(1-\alpha)^3 p_{t-4} + \dots$$
+
+Como se puede observar, la expresión resultante es exactamente igual a la solución encontrada en el inciso **a)**, por lo que la solución es correcta.
+
+---
+
+## Ejercicio 4 – La curva de Phillips
+
+Desde la publicación del artículo de Phillips se efectuó una muy extensa investigación sobre la curva de Phillips tanto en el nivel teórico como en el empírico. La curva de Phillips establece una relación entre la inflación y el desempleo, que puede ser formulada de la siguiente manera:
+
+$$
+\pi_t = \theta \pi_{t-1} + (\mu + z) + \alpha u_t \tag{2}
+$$
+
+En su versión inicial propuesta por Phillips, se toma $\theta = 0$, por lo tanto,
+
+$$\pi_t = (\mu + z) + \alpha u_t \tag{3}$$
+
+Posteriormente, Samuelson y Solow establecen una relación llamada la curva de Phillips modificada, donde $\theta = 1$
+
+$$\pi_t = \pi_{t-1} + (\mu + z) + \alpha u_t \tag{4}$$
+
+La cual establece que la relación de Phillips se da entre la variación de la tasa de inflación y la tasa de desempleo. Por lo tanto, se puede representar como:
+
+$$\pi_t - \pi_{t-1} = (\mu + z) + \alpha u_t \tag{5}$$
+
+Recordemos que los términos $\mu$ y $z$ representan el margen sobre los precios y los demás factores que afectan a la fijación de los salarios, respectivamente. 
+
+El archivo `"curva_phillips.xlsx"` contiene información de la tasa de inflación y la tasa de desempleo de Estados Unidos, para el periodo 1960 a 2006.
+
+
+a) Grafique las series de tiempo y comente las relaciones que se observan.
+
+b) Estime la curva de Phillips modificada y presente los resultados en una Tabla ordenada.
+
+c) Interprete los coeficientes estimados y su significancia estadística.
+
+d) Calcule el valor de la tasa natural de desempleo. Recuerde que *la tasa natural de desempleo es la tasa de desempleo necesaria para mantener constante la tasa de inflación*.
+
+e) Determine si existe algún problema econométrico, presente el resultado de una prueba de Heteroscedasticidad, Autocorrelación y Normalidad, explicando el resultado.
+
+### a) Gráfica de las series de tiempo
+```{r}
+library(readxl)
+# Cargar el archivo Excel
+df_phillips <- read_excel("2. curva_phillips.xlsx")
+# Graficar las series de inflación y desempleo
+library(ggplot2)
+ggplot(df_phillips, aes(x = year)) +
+  geom_line(aes(y = inf, color = "Inflación"), size = 1) +
+  geom_line(aes(y = unem, color = "Desempleo"), size = 1) +
+  labs(title = "Tasa de Inflación y Desempleo en EEUU (1960-2006) ",
+       x = "Año",
+       y = "Tasa (%)",
+       color = "Variable") +
+  theme_minimal() +
+  scale_color_manual(values = c("Inflación" = "blue", "Desempleo" = "red")) +
+  theme(legend.position = "bottom")
+```
+
+La relación que se observa no es probablemente no se lineal pero si proporcional con algo de resago, además se puede observar momementos como el 1974 y 1980 donde aumentan en una forma simultanea la tasa de inflación y desempleo, lo que se conoce como estanflación, esto posiblemente debido a las crisis económicas y sociales que se vivieron en esos años.
+
+---
+
+### b) Estimación de la Curva de Phillips
+
+
+```{r}
+
+library(modelsummary)
+
+# 1. Crear la variable dependiente (Diferencia de inflación)
+df_phillips <- df_phillips %>%
+  mutate(diff_inf = inf - lag(inf))
+
+# Estimación del modelo (Asegúrate de haber creado diff_inf antes)
+modelo_phillips <- lm(diff_inf ~ unem, data = df_phillips)
+
+```
+
+
+
+```{r}
+
+# 2. La versión más simple que NO se mueve
+# Usamos 'markdown' en lugar de 'latex' para que se porte bien
+modelsummary(modelo_phillips, 
+             output = "markdown", 
+             fmt = 3, 
+             stars = TRUE,
+             title = "Tabla 1: Resultados Curva de Phillips",
+             gof_omit = "IC|Log|Adj|F|RMSE")
+
+```
+
+Aca podemos observar que el coeficiente de la variable desempleo es negativo y estadísticamente significativo, lo que indica que un aumento en la tasa de desempleo está asociado con un dismunción en la tasa de inflación, lo que es consistente con la teoría de la curva de Phillips.
+
+---
+
+### c) Interpretación de los coeficientes
+
+El coeficiente de la variable desempleo (unem) es de -0.638. Esto significa que por cada punto porcentual de aumento en la tasa de desempleo, la tasa de inflación disminuye en aproximadamente 0.638 puntos porcentuales, manteniendo constante el resto de las variables.
+
+---
+
+### d) Cálculo de la tasa natural de desempleo
+
+Para calcular la NAIRU (Natural Rate of Unemployment), podemos usar la fórmula derivada de la curva de Phillips modificada:
+$$
+NAIRU = -\frac{\mu + z}{\alpha}
+$$
+
+En este caso, $\mu + z$ es el intercepto del modelo, que es 3.784, y $\alpha$ es el coeficiente de desempleo, que es -0.638. Por lo tanto:
+$$
+NAIRU = -\frac{3.784}{-0.638} \approx 5.93\%
+$$
+
+
+Esto nos muestra que el desempleo "Natural" para Estados Unidos es de aproximadamente de 5.93%, lo que significa que si la tasa de desempleo se mantiene en ese nivel, la tasa de inflación se mantendrá constante.
+
+---
+
+
+### e) Pruebas de problemas econométricos
+
+```{r}
+library(lmtest)
+library(tseries)
+library(dplyr)
+library(knitr)
+library(kableExtra)
+#| echo: false
+#| results: asis
+#| message: false
+#| warning: false
+
+# 1. Aseguramos los tests 
+dw <- dwtest(modelo_phillips)
+bg <- bgtest(modelo_phillips)
+bp <- bptest(modelo_phillips)
+white <- bptest(modelo_phillips, ~ unem + I(unem^2), data = df_phillips)
+jb <- jarque.bera.test(residuals(modelo_phillips))
+
+# 2. DataFrame de resultados
+res_tests <- data.frame(
+  Prueba = c("Durbin-Watson (Autocorr)", "Breusch-Godfrey (Autocorr)", 
+             "Breusch-Pagan (Hetero)", "White (Hetero)", "Jarque-Bera (Normalidad)"),
+  Estadistico = c(dw$statistic, bg$statistic, bp$statistic, white$statistic, jb$statistic),
+  P_Valor = c(dw$p.value, bg$p.value, bp$p.value, white$p.value, jb$p.value)
+)
+
+
+res_tests %>%
+  mutate(
+    `P-Valor` = round(P_Valor, 4),
+    Estadistico = round(Estadistico, 4),
+    Decision = ifelse(P_Valor < 0.05, "Rechaza H0", "No rechaza H0")
+  ) %>%
+  select(Prueba, Estadistico, `P-Valor`, Decision) %>%
+  kable(format = "latex", booktabs = TRUE, escape = TRUE, 
+        caption = "Diagnósticos del Modelo", align = "c")  %>% kable_styling(latex_options = c("striped", "hold_position"), position = "center")
+```
+
+Podemos ver como el modelo que estabamos estimando presenta problemas de autocorrelación, como se ve en la prueba de Durbin-Watson, pero no se observa en la prueba de Breusch-Godfrey, lo que podría indicar que el problema de autocorrelación no es tan grave. Además, se observa un problema de heteroscedasticidad, como se ve en la prueba de Breusch-Pagan y White, lo que indica que los errores no tienen varianza constante. Finalmente, la prueba de Jarque-Bera indica que los residuos si siguen una distribución normal.
+
+---
+
+## Ejercicio 5 – Simulación de un Proceso Ruido Blanco Gaussiano en R
+
+Utilizando R simule los siguientes procesos (media, varianza)
+
+$$\varepsilon_t \sim iidN(0, (1)^2) \quad \quad \quad \varepsilon_t \sim iidN(0, (2)^2) \quad \quad \quad \varepsilon_t \sim iidN(0, (3)^2)$$
+
+a) Para cada proceso calcule la media, la varianza, la FACS y FACP muestral con 100, 10000 y 1000000 observaciones.
+
+b) Presente una tabla comparativa de las estadísticas de cada proceso para las 3 muestras y sus respectivas FACS y FACP para 10 rezagos.
+
+c) Compare los resultados.
+
+### a) Simulación de los procesos y cálculo de estadísticas
+
+
+```{r}
+
+#| echo: false
+#| message: false
+#| warning: false
+
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+
+# Definimos los tamaños de muestra que pide el ejercicio
+tamanos <- c(100, 10000, 1000000)
+varianza_ejemplo <- 1 # Usamos la primera varianza para mostrar la convergencia por N
+
+# Función para simular
+simular_n <- function(n) {
+  set.seed(123)
+  eps <- rnorm(n, mean = 0, sd = sqrt(varianza_ejemplo))
+  tibble(
+    `Tamaño (N)` = format(n, big.mark = ".", scientific = FALSE),
+    `Var. Poblacional` = varianza_ejemplo,
+    `Media Muestral` = mean(eps),
+    `Varianza Muestral` = var(eps)
+  )
+}
+
+# Generar la tabla de 3 filas
+tabla_n <- map_dfr(tamanos, simular_n)
+
+# Renderizado
+tabla_n %>%
+  kable(caption = "Convergencia de Estadísticas Muestrales según Tamaño de Muestra (N)", 
+        digits = 4, format = "latex", booktabs = TRUE, align = "c") %>%
+  kable_styling(latex_options = c("striped", "hold_position"))
+
+
+
+```
+
+
+
+```{r}
+#| echo: false
+#| fig-height: 10
+#| fig-width: 8
+
+# Configuración: 3 procesos (filas) x 2 gráficos (columnas)
+par(mfrow = c(3, 2), mar = c(4, 4, 3, 2))
+
+varianzas <- c(1, 4, 9)
+
+for(s2 in varianzas) {
+  set.seed(123)
+  # Simulamos con N=10.000 para que la visualización sea óptima
+  proceso <- rnorm(10000, 0, sqrt(s2))
+  
+  # Gráfico FACS
+  acf(proceso, lag.max = 10, 
+      main = paste("FACS (Var =", s2, ")"), 
+      ylim = c(-1, 1), col = "darkblue")
+  
+  # Gráfico FACP
+  pacf(proceso, lag.max = 10, 
+       main = paste("FACP (Var =", s2, ")"), 
+       ylim = c(-1, 1), col = "darkred")
+}
+```
+
+### c) Comparación de resultados
+
+
+Los datos de la tabla demuestran que a mayor número de observaciones, más precisión hay en los cálculos, acercándose la media a 0 y la varianza a 1 tal como dicta la teoría. Este comportamiento es el esperado bajo la Ley de los Grandes Números. Además, la estructura de las gráficas de autocorrelación simple y parcial no presenta correlaciones importantes, lo cual es coherente con un proceso que no tiene persistencia en el tiempo, como es el caso de un proceso de ruido blanco. En resumen, los resultados muestran que a medida que aumentamos el tamaño de la muestra, las estadísticas muestrales convergen a sus valores poblacionales y se confirma la ausencia de autocorrelación en el proceso simulado.
