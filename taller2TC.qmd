@@ -154,21 +154,27 @@ stats <- df_long %>%
     Maximo = max(gdp_growth, na.rm = TRUE)
   )
 stats %>%
-  mutate(across(where(is.numeric), ~ round(., 2))) %>% # Redondear a 2 decimales
+  mutate(across(where(is.numeric), ~ round(., 2))) %>% 
   kable(
+    format = "latex", # O "html" dependiendo de tu salida, pero para PDF usa "latex"
+    booktabs = TRUE,
     caption = "Estadísticas Descriptivas del Crecimiento del PIB (1980-2024)", 
     col.names = c("País", "Media", "Mediana", "Desv. Estándar", "Mínimo", "Máximo"),
     align = "c"
   ) %>%
   kable_styling(
-    bootstrap_options = c("striped", "hover", "condensed", "responsive"),
+    latex_options = c("striped", "hold_position"), 
     full_width = FALSE,
     position = "center",
     font_size = 14
   ) %>%
-  row_spec(0, bold = TRUE, color = "white", background = "#2c3e50") %>% # Encabezado elegante
-  column_spec(1, bold = TRUE, border_right = TRUE) %>% # Resaltar columna de países
-  footnote(general = "Fuente: Elaboración propia con datos del Banco Mundial (WDI).")
+  row_spec(0, bold = TRUE, color = "white", background = "#2c3e50") %>% 
+  column_spec(1, bold = TRUE, border_right = TRUE) %>% 
+  footnote(
+    general = "Fuente: Elaboración propia con datos del Banco Mundial (WDI).",
+    general_title = "", 
+    footnote_as_chunk = TRUE 
+  )
 ```
 
 Chile presenta una media de crecimiento del PIB del 4.10%, siendo esta la mas alta entre los paises analizados, los que nos indica que el pais tiene una de las mejores sendas de crecimiento economicó de la región.
@@ -182,6 +188,8 @@ Mexico tiene un crecimiento promedio del 2.24%, siendo este el mas bajo entre lo
 Peru tiene un crecimiento promedio del 3.10%, siendo esta la tercera mas alta de la región analizada, lo que nos indica que el país ha tenido un crecimiento relativamente bueno en comparación con los demás países, aunque no tan alto como Chile y Colombia, esto a pesar de sus inestabilidades politicas y sociales de las ultimas decadas.
 
 ---
+
+\newpage
 
 ### c) Análisis por Periodos
 Calcule las estadísticas descriptivas (las mismas del literal b) para cada serie desglosada por los siguientes periodos:
@@ -216,13 +224,23 @@ stats_periodos <- df_long %>%
 # 2. Tabla 
 stats_periodos %>%
   kable(
+    format = "latex", # Obligatorio para PDF para que collapse_rows funcione bien
+    booktabs = TRUE,
     caption = "Comparativa Histórica de Crecimiento del PIB por Periodos",
     col.names = c("País", "Periodo", "Media (%)", "Mediana (%)", "Desv. Est.", "Mínimo", "Máximo"),
     align = "llccccc"
   ) %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F) %>%
-  collapse_rows(columns = 1, valign = "middle") %>% # Une las celdas del nombre del país
-  row_spec(0, bold = TRUE, background = "#34495e", color = "white")
+  kable_styling(
+    latex_options = c("striped", "hold_position"), 
+    full_width = F
+  ) %>%
+  collapse_rows(columns = 1, valign = "middle") %>% 
+  row_spec(0, bold = TRUE, background = "#34495e", color = "white") %>%
+  footnote(
+    general = "Fuente: Elaboración propia con datos del Banco Mundial (WDI).",
+    general_title = "", 
+    footnote_as_chunk = TRUE
+  )
 ```
 
 En el caso chileno se puede observar como el periodo Pos-dictadura (1990 en adelante) fue el periodo con el mayor crecimiento económico del país, mostrando una media del 6.23% en el periodo 1990-1999, y una media del 5.09% en el periodo 2000-2009, lo que nos indica que el país tuvo un crecimiento económico muy fuerte en las décadas posteriores a la dictadura, esto posiblemente a la democratización del sistema politico.
@@ -547,3 +565,7 @@ for(s2 in varianzas) {
 
 
 Los datos de la tabla demuestran que a mayor número de observaciones, más precisión hay en los cálculos, acercándose la media a 0 y la varianza a 1 tal como dicta la teoría. Este comportamiento es el esperado bajo la Ley de los Grandes Números. Además, la estructura de las gráficas de autocorrelación simple y parcial no presenta correlaciones importantes, lo cual es coherente con un proceso que no tiene persistencia en el tiempo, como es el caso de un proceso de ruido blanco. En resumen, los resultados muestran que a medida que aumentamos el tamaño de la muestra, las estadísticas muestrales convergen a sus valores poblacionales y se confirma la ausencia de autocorrelación en el proceso simulado.
+
+## Codigo Github
+
+Para ver el codigo completo del taller, puede acceder al siguiente enlace: [Taller 2 - Procesos Estocásticos](https://github.com/Juan-Moreno1/TE-IA2/blob/19e0e2faf88260ff479b8445d8a4c9e45b96926c/taller2TC.qmd)
