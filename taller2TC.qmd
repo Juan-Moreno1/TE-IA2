@@ -386,7 +386,7 @@ library(modelsummary)
 df_phillips <- df_phillips %>%
   mutate(diff_inf = inf - lag(inf))
 
-# Estimación del modelo (Asegúrate de haber creado diff_inf antes)
+# Estimación del modelo de Phillips modificado
 modelo_phillips <- lm(diff_inf ~ unem, data = df_phillips)
 
 ```
@@ -395,8 +395,6 @@ modelo_phillips <- lm(diff_inf ~ unem, data = df_phillips)
 
 ```{r}
 
-# 2. La versión más simple que NO se mueve
-# Usamos 'markdown' en lugar de 'latex' para que se porte bien
 modelsummary(modelo_phillips, 
              output = "markdown", 
              fmt = 3, 
@@ -447,7 +445,7 @@ library(kableExtra)
 #| message: false
 #| warning: false
 
-# 1. Aseguramos los tests 
+
 dw <- dwtest(modelo_phillips)
 bg <- bgtest(modelo_phillips)
 bp <- bptest(modelo_phillips)
@@ -503,9 +501,9 @@ library(tidyverse)
 library(knitr)
 library(kableExtra)
 
-# Definimos los tamaños de muestra que pide el ejercicio
+# Definimos los tamaños de muestra
 tamanos <- c(100, 10000, 1000000)
-varianza_ejemplo <- 1 # Usamos la primera varianza para mostrar la convergencia por N
+varianza_ejemplo <- 1 
 
 # Función para simular
 simular_n <- function(n) {
